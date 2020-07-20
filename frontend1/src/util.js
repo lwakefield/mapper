@@ -39,6 +39,19 @@ export function mapGrid (map, fn) {
     return result;
 }
 
+export function mapGrid2 (grid, { width, height }, fn) {
+    const result = new Array(height * width);
+    let start = Date.now();
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const offset = x + y * width;
+            result[offset] = fn(grid[offset], x, y);
+        }
+    }
+
+    return result;
+}
+
 export function getCell (map, x, y) {
     const offset = x + y * map.size.width;
     return map.grid[offset];
@@ -55,6 +68,15 @@ export function setCells (map, cells) {
     const newGrid = map.grid.concat();
     for (const {x, y, val} of cells) {
       const offset = x + y * map.size.width;
+      newGrid[offset] = val;
+    }
+    return newGrid;
+}
+
+export function setCells2 (grid, { height, width }, cells) {
+    const newGrid = grid.concat();
+    for (const {x, y, val} of cells) {
+      const offset = x + y * width;
       newGrid[offset] = val;
     }
     return newGrid;

@@ -14,9 +14,10 @@ function newWorld (id) {
                 transform: { x: 0, y: 0, scale: 1 },
                 map: {
                     size: { width: 64, height: 64 },
-                    grid: (new Array(64 * 64)).fill(0)
+                    grid: (new Array(64 * 64)).fill(0),
+                    mask: (new Array(64 * 64)).fill(0)
                 },
-                gmTokens: {}
+                gmTokens: {},
             }
         }
     }
@@ -56,8 +57,6 @@ io.of(UUID_RGX).on('connection', socket => {
     });
 
     socket.on('update', (data, callback) => {
-        // const { revision, ...payload } = data;
-        // const newRevision = uuid.v4();
         table.filter({ id }).update(data).run(conn, (err, res) => {
             (res.replaced === 1) && console.log(`Updated ${id}`);
             (res.replaced === 0) && console.error(`Did not update ${id}`, err);

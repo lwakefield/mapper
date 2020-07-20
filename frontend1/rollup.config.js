@@ -4,7 +4,9 @@ import commonjs from '@rollup/plugin-commonjs';
 import svelte from 'rollup-plugin-svelte';
 import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
+import sveltePreprocess from 'svelte-preprocess';
 import config from 'sapper/config/rollup.js';
+import typescript from '@rollup/plugin-typescript';
 import pkg from './package.json';
 
 const mode = process.env.NODE_ENV;
@@ -22,7 +24,9 @@ export default {
 				'process.browser': true,
 				'process.env.NODE_ENV': JSON.stringify(mode)
 			}),
+			typescript({ sourceMap: dev }),
 			svelte({
+				preprocess: sveltePreprocess(),
 				dev,
 				hydratable: true,
 				emitCss: true
