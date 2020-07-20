@@ -23,7 +23,7 @@ function newWorld (id) {
     }
 }
 
-io.of(UUID_RGX).on('connection', socket => {
+io.of(UUID_RGX).on('connection', async socket => {
     const { nsp } = socket;
     const id = nsp.name.replace(/^\//, '');
 
@@ -31,24 +31,15 @@ io.of(UUID_RGX).on('connection', socket => {
 
     const table = r.table('sessions');
 
-    table.get(id).run(conn, (err, row) => {
-        if (err) {
-            console.error(err);
-        } else if (row) {
-            socket.emit('initialize', row);
-        } else {
-            const world = newWorld(id);
-            table.insert(world).run(conn, (err, res) => {
-                if (err) {
-                    console.error(`Error initialized ${id}`);
-                    console.error(err);
-                } else {
-                    console.log(`Initialized ${id}`);
-                    socket.emit('initialize', world);
-                }
-            });
-        }
-    });
+    const row = await table.get(id).run(conn);
+    if (row) {
+        socket.emit('initialize', row);
+    } else {
+        const world = newWorld(id);
+        await table.insert(world).run(conn);
+        console.log(`Initialized ${id}`);
+        socket.emit('initialize', world);
+    }
 
     table.get(id).changes().run(conn, (err, cursor) => {
         cursor.each((err, row) => {
