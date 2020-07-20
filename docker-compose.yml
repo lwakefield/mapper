@@ -1,0 +1,24 @@
+version: "3.8"
+services:
+
+  couchdb:
+    image: couchdb:3.1
+    ports:
+      - 5984:5984
+    env_file: couchdb.env
+
+  couchdb:
+    image: rethinkdb
+    ports:
+      - 8080:8080
+      - 28015:28015
+
+  frontend:
+    image: node:13-alpine
+    command: yarn dev
+    working_dir: /app
+    volumes:
+      - ./frontend1:/app
+    ports:
+      - 3000:3000
+      - 10000:10000
