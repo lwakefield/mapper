@@ -1,6 +1,10 @@
+const { performance } = require('perf_hooks');
+
 const io = require('socket.io')();
 const r = require('rethinkdb');
 const uuid = require('uuid');
+
+const Lib = require('@mapper/lib');
 
 const UUID_RGX = /([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}){1}/
 
@@ -38,7 +42,7 @@ io.of(UUID_RGX).on('connection', async socket => {
     if (row) {
         socket.emit('initialize', row);
     } else {
-        const world = newWorld(id);
+        const world = Lib.makeWorld(id);
         await table.insert(world).run(conn);
         console.log(`Initialized ${id}`);
         socket.emit('initialize', world);
@@ -51,9 +55,10 @@ io.of(UUID_RGX).on('connection', async socket => {
     });
 
     socket.on('update', (data, callback) => {
-        table.filter({ id }).update(data).run(conn, (err, res) => {
-            (res.replaced === 1) && console.log(`Updated ${id}`);
-            (res.replaced === 0) && console.error(`Did not update ${id}`, err);
+        let startUpdate = performance.now();
+        table.get(id).update(data).run(conn, (err, res) => {
+            (res.replaced === 1) && console.log(`Updated ${id} in ${performance.now() - startUpdate}ms`);
+            (res.replaced === 0) && console.error(`Did not update ${id} in ${performance.now() - startUpdate}ms`, err);
 
             if (callback) {
                 (res.replaced === 0 || err) && callback('error');

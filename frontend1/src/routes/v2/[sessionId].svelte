@@ -16,6 +16,7 @@
     import { stores } from '@sapper/app';
     import * as uuid from 'uuid';
     import SocketIO from 'socket.io-client';
+    import * as Lib from '@mapper/lib';
 
     import Cell from '../../components/Cell.svelte';
 
@@ -29,7 +30,7 @@
     let map = null;
     let mode = 'map';
     let zoom = 1.0;
-    let tool = { type: 'line', mode: 'draw', start: null, mat: 1, temp: null };
+    let tool = { type: 'line', mode: 'draw', mat: 1, temp: null };
     let mods = { shift: false };
     let showMask = true;
 
@@ -147,6 +148,15 @@
         const newMap = JSON.parse(JSON.stringify(map));
         newMap.id = uuid.v4();
         socket.emit('update', {
+            activeMapId: newMap.id,
+            maps: { [newMap.id]: newMap }
+        }, (res) => {});
+    }
+
+    async function handleNewMap (e) {
+        const newMap = Lib.makeMap();
+        socket.emit('update', {
+            activeMapId: newMap.id,
             maps: { [newMap.id]: newMap }
         }, (res) => {});
     }
@@ -155,12 +165,13 @@
 <div>
     {#if world}
         <span>Maps:</span>
-        <select bind:value={world.activeMapId} on:change={handleSyncActiveMap}>
+        <select bind:value={world.activeMapId} on:blur={handleSyncActiveMap}>
             {#each Object.entries(world ? world.maps : {}) as [ id, m ]}
                 <option value={id}>{id}</option>
             {/each}
         </select>
         <button on:click={handleDuplicateMap}>Duplicate Map</button>
+        <button on:click={handleNewMap}>New Map</button>
     {/if}
 
     <span>&nbsp;&nbsp;</span>
@@ -172,14 +183,15 @@
 
     <span>&nbsp;&nbsp;</span>
 
+    {#if ['map', 'mask'].includes(mode)}
     <span>Tool:</span>
     <button style={tool.type === 'pen' && 'background: #ddd'}         on:click={() => tool.type = 'pen'}>Pen</button>
     <button style={tool.type === 'line' && 'background: #ddd'}        on:click={() => tool.type = 'line'}>Line</button>
     <button style={tool.type === 'rect' && 'background: #ddd'}        on:click={() => tool.type = 'rect'}>Rectangle</button>
     <button style={tool.type === 'filled-rect' && 'background: #ddd'} on:click={() => tool.type = 'filled-rect'}>Filled Rectangle</button>
     <button style={tool.type === 'gm-token' && 'background: #ddd'}    on:click={() => tool.type = 'gm-token'}>GM Token</button>
-
     <span>&nbsp;&nbsp;</span>
+    {/if}
 
     {#if mode === 'map'}
     <span>Material:</span>
@@ -188,9 +200,8 @@
     <button style={tool.mat === 3 && 'background: #ddd'} on:click={() => tool.mat = 3}>Water</button>
     <button style={tool.mat === 4 && 'background: #ddd'} on:click={() => tool.mat = 4}>Dirt</button>
     <button style={tool.mat === 5 && 'background: #ddd'} on:click={() => tool.mat = 5}>Grass</button>
-    {/if}
-
     <span>&nbsp;&nbsp;</span>
+    {/if}
 
     <button style={showMask && 'background: #ddd'} on:click={() => showMask = !showMask}>Show Mask</button>
     <button on:click={() => zoom *= 1.2}>Zoom In</button>
@@ -207,10 +218,32 @@
             shape-rendering="crispEdges"
             on:mousedown={e => handleGridToolMouseDown(e)}
         >
+
             <defs>
                 <clipPath id="clip-avatar" clipPathUnits="objectBoundingBox">
                     <circle cx="0.5" cy="0.5" r="0.5" />
                 </clipPath>
+
+                <pattern id="stripe" width={0.7 / zoom} height={0.7 / zoom} patternUnits="userSpaceOnUse" >
+                    <line x1="0" y1="0" x2={0.7 / zoom} y2={0.7 / zoom}
+                        stroke="black"
+                        vector-effect="non-scaling-stroke"
+                        stroke-width="1px"
+                    />
+                </pattern>
+
+                <pattern id="hatch" width={0.5 / zoom} height={0.5 / zoom} patternTransform="rotate(-5)" patternUnits="userSpaceOnUse" >
+                    <line x1="0" y1="0" x2={0.5 / zoom} y2={0.5 / zoom}
+                        stroke="black"
+                        vector-effect="non-scaling-stroke"
+                        stroke-width="2px"
+                    />
+                    <line x1={0} y1={0.5 / zoom} x2={0.5 / zoom} y2={0}
+                        stroke="black"
+                        vector-effect="non-scaling-stroke"
+                        stroke-width="2px"
+                    />
+                </pattern>
             </defs>
 
             <mask id="fogOfWar">

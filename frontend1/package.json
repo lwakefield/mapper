@@ -12,6 +12,7 @@
     "test": "run-p --race dev cy:run"
   },
   "dependencies": {
+    "@mapper/lib": "file:../lib",
     "compression": "^1.7.1",
     "polka": "next",
     "pouchdb": "^7.2.1",
