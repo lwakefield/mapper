@@ -7,10 +7,13 @@ const UUID_RGX = /([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[
 let conn;
 
 function newWorld (id) {
+    const mapId = uuid.v4();
     return {
         id,
+        activeMapId: mapId,
         maps: {
-            [uuid.v4()]: {
+            [mapId]: {
+                id: mapId,
                 transform: { x: 0, y: 0, scale: 1 },
                 map: {
                     size: { width: 64, height: 64 },
@@ -62,6 +65,9 @@ io.of(UUID_RGX).on('connection', async socket => {
 
 async function main () {
     conn = await r.connect({ host: process.env.RETHINK_HOST, port: process.env.RETHINK_PORT });
+    try {
+        await r.tableCreate('sessions').run(conn);
+    } catch (e) { /* happens if table already exists */ }
     console.log('listening...');
     io.listen(3001);
 }

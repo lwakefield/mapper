@@ -1,6 +1,8 @@
 <style>
     .tabletop {
         overflow: scroll;
+        padding-right: 10px;
+        padding-bottom: 10px;
     }
 </style>
 
@@ -24,14 +26,14 @@
 
     let socket = null;
     let world = null;
-    let worldSize;
+    let map = null;
     let mode = 'map';
     let zoom = 1.0;
     let tool = { type: 'line', mode: 'draw', start: null, mat: 1, temp: null };
     let mods = { shift: false };
     let showMask = true;
 
-    $: worldSize = world && Util.getWorldSize(world);
+    $: map = world && world.maps[world.activeMapId];
 
     if (process.browser) {
         socket = SocketIO(`http://localhost:3001/${page.params.sessionId}`);
@@ -61,11 +63,10 @@
                 ...vec,
                 val: tool.mode === 'draw' ? tool.mat : 0
             }));
-            const map = world.maps[mapIndex];
             const grid = Util.setCells(map.map, cells);
 
             socket.emit('update', {
-                maps: { [mapIndex]: { map: { grid } } }
+                maps: { [map.id]: { map: { grid } } }
             }, (res) => {});
 
             tool = { ...tool, temp: null };
@@ -76,11 +77,10 @@
                 ...vec,
                 val: tool.mode === 'draw' ? 1 : 0
             }));
-            const map = world.maps[mapIndex];
             const mask = Util.setCells2(map.map.mask, map.map.size, cells);
 
             socket.emit('update', {
-                maps: { [mapIndex]: { map: { mask } } }
+                maps: { [map.id]: { map: { mask } } }
             }, (res) => {});
 
 
@@ -96,14 +96,13 @@
 
         if (tool.type === 'gm-token') {
             const point = Tools.toSVGPoint(ev);
-            const map = world.maps[mapIndex];
             map.gmTokens[uuid.v4()] = {
                 ...point,
                 url: `https://api.adorable.io/avatars/285/token-${Util.randInt(0, 1024)}.png`
             };
 
             socket.emit('update', {
-                maps: { [mapIndex]: { gmTokens: map.gmTokens } }
+                maps: { [map.id]: { gmTokens: map.gmTokens } }
             }, (res) => {});
         }
     }
@@ -111,33 +110,61 @@
     async function handleTokenMouseDown (ev, mapIndex, tokenId) {
         if (ev.button !== 0) return;
 
+        ev.stopPropagation();
+
         if (ev.shiftKey) {
             socket.emit('update', {
-                maps: { [mapIndex]: { gmTokens: { [tokenId]: null } } }
+                maps: { [map.id]: { gmTokens: { [tokenId]: null } } }
             }, (res) => {});
         } else {
             const update = ({ dx, dy }) => {
-                const token = world.maps[mapIndex].gmTokens[tokenId];
+                const token = map.gmTokens[tokenId];
                 token.x += dx;
                 token.y += dy;
                 world = { ...world };
             };
             const commit = ({ dx, dy }) => {
-                const token = world.maps[mapIndex].gmTokens[tokenId];
+                const token = map.gmTokens[tokenId];
                 token.x += dx;
                 token.y += dy;
                 world = { ...world };
 
                 socket.emit('update', {
-                    maps: { [mapIndex]: { gmTokens: { [tokenId]: token } } }
+                    maps: { [map.id]: { gmTokens: { [tokenId]: token } } }
                 }, (res) => {});
             }
             Tools.movetool(ev, update, commit);
         }
     }
+
+    async function handleSyncActiveMap (e) {
+        socket.emit('update', {
+            activeMapId: world.activeMapId,
+        }, (res) => {});
+    }
+
+    async function handleDuplicateMap (e) {
+        const newMap = JSON.parse(JSON.stringify(map));
+        newMap.id = uuid.v4();
+        socket.emit('update', {
+            maps: { [newMap.id]: newMap }
+        }, (res) => {});
+    }
 </script>
 
 <div>
+    {#if world}
+        <span>Maps:</span>
+        <select bind:value={world.activeMapId} on:change={handleSyncActiveMap}>
+            {#each Object.entries(world ? world.maps : {}) as [ id, m ]}
+                <option value={id}>{id}</option>
+            {/each}
+        </select>
+        <button on:click={handleDuplicateMap}>Duplicate Map</button>
+    {/if}
+
+    <span>&nbsp;&nbsp;</span>
+
     <span>Mode:</span>
     <button style={mode === 'map' && 'background: #ddd'}    on:click={() => mode = 'map'}>Map</button>
     <button style={mode === 'mask' && 'background: #ddd'}   on:click={() => mode = 'mask'}>Mask</button>
@@ -170,66 +197,61 @@
     <button on:click={() => zoom /= 1.2}>Zoom Out</button>
 </div>
 
-{#if world}
+{#if map}
     <div class="tabletop">
         <svg
             width={`${100 * zoom}%`}
-            viewBox={`0 0 ${worldSize.width} ${worldSize.height}`}
+            x={map.transform.x}
+            y={map.transform.y}
+            viewBox={`0 0 ${map.map.size.width} ${map.map.size.height}`}
+            shape-rendering="crispEdges"
+            on:mousedown={e => handleGridToolMouseDown(e)}
         >
-            {#each Object.entries(world.maps) as [ mapIndex, map ]}
-                <svg
-                    x={map.transform.x}
-                    y={map.transform.y}
-                    viewBox={`0 0 ${map.map.size.width} ${map.map.size.height}`}
-                    shape-rendering="crispEdges"
-                >
-                    <defs>
-                        <clipPath id="clip-avatar" clipPathUnits="objectBoundingBox">
-                            <circle cx="0.5" cy="0.5" r="0.5" />
-                        </clipPath>
-                    </defs>
+            <defs>
+                <clipPath id="clip-avatar" clipPathUnits="objectBoundingBox">
+                    <circle cx="0.5" cy="0.5" r="0.5" />
+                </clipPath>
+            </defs>
 
-                    <mask id="fogOfWar">
-                        {#each Util.mapGrid2(map.map.mask, map.map.size, (val, x, y) => ({ val, x, y})) as { val, x, y }}
-                            <rect
-                                x={x} y={y}
-                                width={1} height={1}
-                                fill={(val === 0 && '#fff') || '#aaa'}
-                            />
-                        {/each}
-                    </mask>
+            <mask id="fogOfWar">
+                {#each Util.mapGrid2(map.map.mask, map.map.size, (val, x, y) => ({ val, x, y})) as { val, x, y }}
+                    <rect
+                        x={x} y={y}
+                        width={1} height={1}
+                        fill={(val === 0 && '#fff') || '#aaa'}
+                        />
+                {/each}
+            </mask>
 
-                    <g mask={showMask ? 'url(#fogOfWar)' : ''}>
-                        {#each Util.mapGrid(map.map, (val, x, y) => ({ val, x, y})) as { val, x, y }}
-                            <Cell x={x} y={y} val={val} handleMouseDown={e => handleGridToolMouseDown(e, mapIndex)} />
-                        {/each}
+            <g mask={showMask ? 'url(#fogOfWar)' : ''}>
+                {#each Util.mapGrid(map.map, (val, x, y) => ({ val, x, y})) as { val, x, y }}
+                    <Cell x={x} y={y} val={val} />
+                {/each}
 
-                        {#if tool.temp }
-                            {#each tool.temp as {x, y}}
-                                <Cell x={x} y={y} />
-                            {/each}
-                        {/if}
+                {#if tool.temp }
+                    {#each tool.temp as {x, y}}
+                        <Cell x={x} y={y} />
+                    {/each}
+                {/if}
 
-                        {#each Object.entries(map.gmTokens) as [ tokenId, token ]}
-                            {#if token}
-                                <image
-                                    x={token.x} y={token.y}
-                                    on:mousedown={e => handleTokenMouseDown(e, mapIndex, tokenId)}
-                                    width={1}
-                                    height={1}
-                                    href={token.url}
-                                    clip-path="url(#clip-avatar)"
-                                    style={`cursor: ${
-                                    (mods.shift && 'not-allowed')
-                                    || 'move'
-                                    }`}
-                                />
-                            {/if}
-                        {/each}
-                    </g>
+                {#each Object.entries(map.gmTokens) as [ tokenId, token ]}
+                    {#if token}
+                        <image
+                            x={token.x} y={token.y}
+                            on:mousedown={e => handleTokenMouseDown(e, undefined, tokenId)}
+                            width={1}
+                            height={1}
+                            href={token.url}
+                            clip-path="url(#clip-avatar)"
+                            style={`cursor: ${
+                            (mods.shift && 'not-allowed')
+                            || 'move'
+                            }`}
+                        />
+                    {/if}
+                {/each}
+            </g>
 
-                </svg>
-            {/each}
         </svg>
     </div>
 {/if}

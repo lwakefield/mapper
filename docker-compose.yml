@@ -1,17 +1,23 @@
 version: "3.8"
 services:
 
-  couchdb:
-    image: couchdb:3.1
-    ports:
-      - 5984:5984
-    env_file: couchdb.env
-
-  couchdb:
+  rethinkdb:
     image: rethinkdb
     ports:
       - 8080:8080
       - 28015:28015
+
+  backend:
+    image: node:13-alpine
+    command: node index.js
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    environment:
+      - RETHINK_HOST=rethinkdb
+      - RETHINK_PORT=28015
+    ports:
+      - 3001:3001
 
   frontend:
     image: node:13-alpine

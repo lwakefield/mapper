@@ -40,6 +40,10 @@ button {
 	border: 1px solid #333;
 }
 
+button:hover {
+	background: #eee;
+}
+
 #sapper {
 	display: flex;
 	flex-direction: column;
