@@ -26,7 +26,8 @@
     export let page;
 
     let socket = null;
-    let world = null;
+    let session = null;
+    let maps = {};
     let map = null;
     let mode = 'map';
     let zoom = 1.0;
@@ -34,12 +35,14 @@
     let mods = { shift: false };
     let showMask = true;
 
-    $: map = world && world.maps[world.activeMapId];
+    $: map = session && maps[session.activeMapId] || null;
 
     if (process.browser) {
         socket = SocketIO(`http://localhost:3001/${page.params.sessionId}`);
-        socket.once('initialize', w => { world = w; console.log(w); });
-        socket.on('update',       w => { world = w; console.log(w); });
+        socket.on('initialize:session', s => { session = s; console.log(s); });
+        socket.on('update:session',     s => { session = s; console.log(s); });
+        socket.on('initialize:map',     m => { maps[m.id] = m; console.log(m); });
+        socket.on('update:map',         m => { maps[m.id] = m; console.log(m); });
         socket.connect();
 
         document.addEventListener('keydown', e => {
@@ -66,8 +69,8 @@
             }));
             const grid = Util.setCells(map.map, cells);
 
-            socket.emit('update', {
-                maps: { [map.id]: { map: { grid } } }
+            socket.emit('update:map', {
+                id: map.id, map: { grid }
             }, (res) => {});
 
             tool = { ...tool, temp: null };
@@ -80,8 +83,8 @@
             }));
             const mask = Util.setCells2(map.map.mask, map.map.size, cells);
 
-            socket.emit('update', {
-                maps: { [map.id]: { map: { mask } } }
+            socket.emit('update:map', {
+                id: map.id, map: { mask }
             }, (res) => {});
 
 
@@ -102,8 +105,8 @@
                 url: `https://api.adorable.io/avatars/285/token-${Util.randInt(0, 1024)}.png`
             };
 
-            socket.emit('update', {
-                maps: { [map.id]: { gmTokens: map.gmTokens } }
+            socket.emit('update:map', {
+                id: map.id, gmTokens: map.gmTokens
             }, (res) => {});
         }
     }
@@ -122,13 +125,13 @@
                 const token = map.gmTokens[tokenId];
                 token.x += dx;
                 token.y += dy;
-                world = { ...world };
+                session = { ...session };
             };
             const commit = ({ dx, dy }) => {
                 const token = map.gmTokens[tokenId];
                 token.x += dx;
                 token.y += dy;
-                world = { ...world };
+                session = { ...session };
 
                 socket.emit('update', {
                     maps: { [map.id]: { gmTokens: { [tokenId]: token } } }
@@ -138,35 +141,34 @@
         }
     }
 
-    async function handleSyncActiveMap (e) {
-        socket.emit('update', {
-            activeMapId: world.activeMapId,
+    async function handleSyncActiveMap () {
+        socket.emit('update:session', {
+            id: session.id,
+            activeMapId: session.activeMapId,
         }, (res) => {});
     }
 
     async function handleDuplicateMap (e) {
         const newMap = JSON.parse(JSON.stringify(map));
         newMap.id = uuid.v4();
-        socket.emit('update', {
-            activeMapId: newMap.id,
-            maps: { [newMap.id]: newMap }
-        }, (res) => {});
+        socket.emit('insert:map', newMap, (res) => {});
+        session.activeMapId = newMap.id;
+        handleSyncActiveMap();
     }
 
     async function handleNewMap (e) {
-        const newMap = Lib.makeMap();
-        socket.emit('update', {
-            activeMapId: newMap.id,
-            maps: { [newMap.id]: newMap }
-        }, (res) => {});
+        const newMap = Lib.makeMap(session.id);
+        socket.emit('insert:map', newMap, (res) => {});
+        session.activeMapId = newMap.id;
+        handleSyncActiveMap();
     }
 </script>
 
 <div>
-    {#if world}
+    {#if session}
         <span>Maps:</span>
-        <select bind:value={world.activeMapId} on:blur={handleSyncActiveMap}>
-            {#each Object.entries(world ? world.maps : {}) as [ id, m ]}
+        <select bind:value={session.activeMapId} on:blur={handleSyncActiveMap}>
+            {#each Object.entries(maps || {}) as [ id, m ]}
                 <option value={id}>{id}</option>
             {/each}
         </select>
@@ -212,8 +214,6 @@
     <div class="tabletop">
         <svg
             width={`${100 * zoom}%`}
-            x={map.transform.x}
-            y={map.transform.y}
             viewBox={`0 0 ${map.map.size.width} ${map.map.size.height}`}
             shape-rendering="crispEdges"
             on:mousedown={e => handleGridToolMouseDown(e)}
