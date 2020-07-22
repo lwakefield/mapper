@@ -94,7 +94,15 @@ export function pen (ev, update, commit) {
         let curr = quantizeSVGPoint(toSVGPoint(ev));
         if (hasPoint(curr)) return;
 
-        cells.push(curr);
+        const last = cells[cells.length - 1] || null;
+
+        if (last) {
+            // we may end up adding points that already exist in cells;
+            cells.push(...Util.line(last.x, last.y, curr.x, curr.y))
+        } else {
+            cells.push(curr);
+        }
+
         update(cells);
     };
 
