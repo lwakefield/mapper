@@ -53,7 +53,10 @@
     let selectedToken = null;
     let tool = { type: 'pen', mode: 'draw', mat: '#', temp: null };
     let mods = { shift: false };
-    let showMask = true;
+    let displayOptions = {
+        mask: true,
+        gmTokens: true
+    }
 
     $: if (session && maps[session.activeMapId]) {
         map = maps[session.activeMapId];
@@ -110,6 +113,12 @@
 
     async function handleMapMaskToolMouseDown (ev) {
         if (ev.button !== 0) return;
+
+        if (ev.altKey) {
+            let { x, y } = Tools.quantizeSVGPoint(Tools.toSVGPoint(ev));
+
+            tool.mat = map.grid.split('\n')[y][x];
+        }
 
         tool.mode = ev.shiftKey ? 'erase' : 'draw';
 
@@ -267,7 +276,7 @@
                 </mask>
 
 
-                <g mask={showMask ? 'url(#fogOfWar)' : ''}>
+                <g mask={displayOptions.mask ? 'url(#fogOfWar)' : ''}>
                     {#each Util.mapGridStr(map.grid, (val, x, y) => ({ val, x, y })) as { val, x, y }}
                         <Cell x={x} y={y} val={val} />
                     {/each}
@@ -278,23 +287,25 @@
                         {/each}
                     {/if}
 
-                    {#each Object.entries(map.gmTokens) as [ tokenId, token ]}
-                        {#if token}
-                            <image
-                                x={token.x} y={token.y}
-                                on:mousedown={e => handleTokenMouseDown(e, tokenId)}
-                                width={token.scale}
-                                height="auto"
-                                href={token.url}
-                                clip-path="url(#clip-avatar)"
-                                style={`cursor: ${
-                                (mods.shift && 'not-allowed')
-                                || (mods.alt && 'copy')
-                                || 'move'
-                                }`}
-                            />
-                        {/if}
-                    {/each}
+                    {#if displayOptions.gmTokens}
+                        {#each Object.entries(map.gmTokens) as [ tokenId, token ]}
+                            {#if token}
+                                <image
+                                    x={token.x} y={token.y}
+                                    on:mousedown={e => handleTokenMouseDown(e, tokenId)}
+                                    width={token.scale}
+                                    height="auto"
+                                    href={token.url}
+                                    clip-path="url(#clip-avatar)"
+                                    style={`cursor: ${
+                                    (mods.shift && 'not-allowed')
+                                    || (mods.alt && 'copy')
+                                    || 'move'
+                                    }`}
+                                />
+                            {/if}
+                        {/each}
+                    {/if}
                 </g>
 
             </svg>
@@ -380,7 +391,8 @@
             <fieldset>
                 <legend>Display</legend>
 
-                <button style={showMask && 'background: #ddd'} on:click={() => showMask = !showMask}>Show Mask</button>
+                <button class:selected={displayOptions.mask} on:click={() => displayOptions.mask = !displayOptions.mask}>Show Mask</button>
+                <button class:selected={displayOptions.gmTokens} on:click={() => displayOptions.gmTokens = !displayOptions.gmTokens}>Show GM Tokens</button>
                 <button on:click={() => zoom *= 1.2}>Zoom In</button>
                 <button on:click={() => zoom /= 1.2}>Zoom Out</button>
 

@@ -21,6 +21,11 @@ export function replaceCharAt (str, index, val) {
   return str.substring(0, index) + val + str.substring(index + 1);
 }
 
+export function getCell (s, { x, y }) {
+    const rows = s.split('\n');
+	return rows[y][x];
+}
+
 export function setCells (s, cells) {
     const rows = s.split('\n');
     const width = rows[0].length;
