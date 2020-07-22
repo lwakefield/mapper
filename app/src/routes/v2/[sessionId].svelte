@@ -3,6 +3,8 @@
         overflow: scroll;
         padding-right: 10px;
         padding-bottom: 10px;
+        flex-basis: 0;
+        flex-grow: 1;
     }
     .row {
         display: flex;
@@ -161,6 +163,8 @@
     async function handleTokenMouseDown (ev, tokenId) {
         if (ev.button !== 0) return;
 
+        if (mode !== 'token') mode = 'tokens';
+
         selectedToken = map.gmTokens[tokenId];
 
         ev.stopPropagation();
@@ -214,12 +218,6 @@
         await updateSession({ activeMapId: newMap.id });
     }
 </script>
-
-<div>
-    <button style={showMask && 'background: #ddd'} on:click={() => showMask = !showMask}>Show Mask</button>
-    <button on:click={() => zoom *= 1.2}>Zoom In</button>
-    <button on:click={() => zoom /= 1.2}>Zoom Out</button>
-</div>
 
 {#if map}
     <div class="row" style="overflow: hidden">
@@ -347,19 +345,20 @@
                         <button style={tool.type === 'pen' && 'background: #ddd'}         on:click={() => tool.type = 'pen'}>Pen</button>
                         <button style={tool.type === 'line' && 'background: #ddd'}        on:click={() => tool.type = 'line'}>Line</button>
                         <button style={tool.type === 'rect' && 'background: #ddd'}        on:click={() => tool.type = 'rect'}>Rect</button>
-                        <button style={tool.type === 'filled-rect' && 'background: #ddd'} on:click={() => tool.type = 'filled-rect'}>Fill Rect</button>
+                        <button style={tool.type === 'filled-rect' && 'background: #ddd'} on:click={() => tool.type = 'filled-rect'}>F. Rect</button>
                     </div>
                 {/if}
 
                 {#if mode === 'map'}
                     <div class="vspace">
+                        <span>Mtl.:&nbsp;</span>
                         {#each TILE_TYPES as tile }
                             <button style={tool.mat === tile.value && 'background: #ddd'} on:click={() => tool.mat = tile.value}>{tile.name}</button>&nbsp;
                         {/each}
                     </div>
                 {/if}
 
-                {#if selectedToken}
+                {#if mode === 'tokens' && selectedToken}
                     <div>
                         <img src={selectedToken.url} width="100" />
                         <label class="row">
@@ -376,6 +375,15 @@
                         </label>
                     </div>
                 {/if}
+            </fieldset>
+
+            <fieldset>
+                <legend>Display</legend>
+
+                <button style={showMask && 'background: #ddd'} on:click={() => showMask = !showMask}>Show Mask</button>
+                <button on:click={() => zoom *= 1.2}>Zoom In</button>
+                <button on:click={() => zoom /= 1.2}>Zoom Out</button>
+
             </fieldset>
         </div>
     </div>
