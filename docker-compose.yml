@@ -7,24 +7,15 @@ services:
       - 8080:8080
       - 28015:28015
 
-  backend:
-    image: node:13-alpine
-    command: node index.js
-    working_dir: /app
-    volumes:
-      - ./backend:/app
-    environment:
-      - RETHINK_HOST=rethinkdb
-      - RETHINK_PORT=28015
-    ports:
-      - 3001:3001
-
-  frontend:
+  app:
     image: node:13-alpine
     command: yarn dev
     working_dir: /app
     volumes:
-      - ./frontend1:/app
+      - ./app:/app
+    environment:
+      - RETHINK_HOST=rethinkdb
+      - RETHINK_PORT=28015
     ports:
       - 3000:3000
       - 10000:10000

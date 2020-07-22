@@ -25,12 +25,12 @@
     import { stores } from '@sapper/app';
     import * as uuid from 'uuid';
     import SocketIO from 'socket.io-client';
-    import * as Lib from '@mapper/lib';
 
     import Cell from '../../components/Cell.svelte';
 
     import * as Util from '../../util.js';
     import * as Tools from '../../tools.js';
+    import { makeMap, makeToken } from '../../factory.js';
 
     export let page;
 
@@ -48,7 +48,7 @@
     $: map = session && maps[session.activeMapId] || null;
 
     if (process.browser) {
-        socket = SocketIO(`http://localhost:3001/${page.params.sessionId}`);
+        socket = SocketIO(`/${page.params.sessionId}`);
         socket.on('initialize:session', s => { session = s; console.log(s); });
         socket.on('update:session',     s => { session = s; console.log(s); });
         socket.on('initialize:map',     m => { maps[m.id] = m; console.log(m); });
@@ -117,7 +117,7 @@
         } else if (mode === 'tokens') {
             if (ev.button !== 0) return;
 
-            const token = { ...Lib.makeToken(), ...Tools.toSVGPoint(ev) };
+            const token = { ...makeToken(), ...Tools.toSVGPoint(ev) };
             map.gmTokens[token.id] = token;
 
             socket.emit('update:map', {
@@ -189,7 +189,7 @@
     }
 
     async function handleNewMap (e) {
-        const newMap = Lib.makeMap(session.id);
+        const newMap = makeMap(session.id);
         socket.emit('insert:map', newMap, (res) => {});
         session.activeMapId = newMap.id;
         handleSyncActiveMap();

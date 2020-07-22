@@ -16,8 +16,10 @@
     "compression": "^1.7.1",
     "polka": "next",
     "pouchdb": "^7.2.1",
+    "rethinkdb": "^2.4.2",
     "roughjs": "^4.3.1",
     "sirv": "^0.4.0",
+    "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.0",
     "uuid": "^8.2.0"
   },
@@ -29,6 +31,7 @@
     "@babel/runtime": "^7.0.0",
     "@rollup/plugin-babel": "^5.0.0",
     "@rollup/plugin-commonjs": "^12.0.0",
+    "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^8.0.0",
     "@rollup/plugin-replace": "^2.2.0",
     "@rollup/plugin-typescript": "^5.0.2",

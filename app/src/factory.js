@@ -1,14 +1,14 @@
-const uuid = require('uuid');
+import { v4 as uuid } from 'uuid';
 
-function makeWorld (id) {
+export function makeWorld (id) {
     return {
         id,
         activeMapId: null,
     }
 }
 
-function makeMap (sessionId) {
-    const mapId = uuid.v4();
+export function makeMap (sessionId) {
+    const mapId = uuid();
 
     return {
         id: mapId,
@@ -23,18 +23,12 @@ function makeMap (sessionId) {
     };
 }
 
-function makeToken () {
+export function makeToken () {
     return {
-        id: uuid.v4(),
+        id: uuid(),
         x: 0,
         y: 0,
         scale: 1,
         url: `https://api.adorable.io/avatars/285/token-${Math.random()}.png`
     }
-}
-
-module.exports = {
-    makeWorld,
-    makeMap,
-    makeToken
 }
