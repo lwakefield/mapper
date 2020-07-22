@@ -8,7 +8,6 @@
 	main {
 		position: relative;
 		background-color: white;
-		padding: 2em;
 		box-sizing: border-box;
 		overflow: hidden;
 		display: flex;
@@ -16,7 +15,7 @@
 	}
 </style>
 
-<Nav {segment}/>
+<Nav {segment} />
 
 <main>
 	<slot></slot>

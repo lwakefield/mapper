@@ -4,4 +4,6 @@ export const TILE_TYPES = [
 	{ name: 'Water', value: 'w' },
 	{ name: 'Dirt',  value: '@' },
 	{ name: 'Grass',  value: '"' },
+	{ name: 'Wood',  value: '&' },
+	{ name: 'Tree',  value: '%' },
 ];

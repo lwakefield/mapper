@@ -10,6 +10,8 @@
         || (val === 'w' && {href: 'tiles/water-000.png'})
         || (val === '@' && {href: 'tiles/dirt-000.png'})
         || (val === '"' && {href: 'tiles/grass-000.png'})
+        || (val === '&' && {href: 'tiles/wood-000.png'})
+        || (val === '%' && {href: 'tiles/tree-000.png'})
         || {fill: 'purple'}
     ;
 </script>
