@@ -1,85 +1,35 @@
 import * as uuid from 'uuid';
 
-export function makeWorld () {
-  return {
-      maps: {
-          [uuid.v4()]: {
-              transform: { x: 0, y: 0, scale: 1 },
-              map: {
-                  size: { width: 64, height: 64 },
-                  grid: (new Array(64 * 64)).fill(0)
-              },
-              gmTokens: {}
-          }
-      }
+export function mapGridStr (s, fn) {
+  const rows = s.split('\n');
+  const height = rows.length;
+  const width = rows[0].length;
+  let result = [];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      result[x + y * width] = fn(rows[y][x], x, y);
+    }
   }
-}
-
-export function getWorldSize (w) {
-  const maps = Object.values(w.maps);
-  const [ width ] = maps.map(v => v.transform.x + v.map.size.width).sort()
-  const [ height ] = maps.map(v => v.transform.y + v.map.size.height).sort();
-  return { width, height };
+  return result;
 }
 
 export function quantize (num, steps) {
     return steps * Math.floor(num / steps);
 }
 
-export function mapGrid (map, fn) {
-    const result = new Array(map.size.height * map.size.width);
-    let start = Date.now();
-    for (let y = 0; y < map.size.height; y++) {
-        for (let x = 0; x < map.size.width; x++) {
-            const offset = x + y * map.size.width;
-            result[offset] = fn( map.grid[offset], x, y);
-        }
-    }
-
-    return result;
+export function replaceCharAt (str, index, val) {
+  return str.substring(0, index) + val + str.substring(index + 1);
 }
 
-export function mapGrid2 (grid, { width, height }, fn) {
-    const result = new Array(height * width);
-    let start = Date.now();
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const offset = x + y * width;
-            result[offset] = fn(grid[offset], x, y);
-        }
-    }
+export function setCells (s, cells) {
+    const rows = s.split('\n');
+    const width = rows[0].length;
 
-    return result;
-}
-
-export function getCell (map, x, y) {
-    const offset = x + y * map.size.width;
-    return map.grid[offset];
-}
-
-export function setCell (map, x, y, val) {
-    const newGrid = map.grid.concat();
-    const offset = x + y * map.size.width;
-    newGrid[offset] = val;
-    return newGrid;
-}
-
-export function setCells (map, cells) {
-    const newGrid = map.grid.concat();
     for (const {x, y, val} of cells) {
-      const offset = x + y * map.size.width;
-      newGrid[offset] = val;
+      rows[y] = replaceCharAt(rows[y], x, val)
     }
-    return newGrid;
-}
 
-export function setCells2 (grid, { height, width }, cells) {
-    const newGrid = grid.concat();
-    for (const {x, y, val} of cells) {
-      const offset = x + y * width;
-      newGrid[offset] = val;
-    }
-    return newGrid;
+    return rows.join('\n');
 }
 
 // see https://rosettacode.org/wiki/Bitmap/Bresenham%27s_line_algorithm#C

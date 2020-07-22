@@ -10,7 +10,7 @@
         flex-flow: row;
     }
     .sidebar {
-        width: 300px;
+        width: 350px;
         padding: 10px;
     }
 </style>
@@ -31,6 +31,7 @@
     import * as Util from '../../util.js';
     import * as Tools from '../../tools.js';
     import { makeMap, makeToken } from '../../factory.js';
+    import { TILE_TYPES } from '../../tiles.js';
 
     export let page;
 
@@ -38,21 +39,26 @@
     let session = null;
     let maps = {};
     let map = null;
+    let mapSize = null;
     let mode = 'map';
     let zoom = 1.0;
     let selectedToken = null;
-    let tool = { type: 'line', mode: 'draw', mat: 1, temp: null };
+    let tool = { type: 'line', mode: 'draw', mat: '#', temp: null };
     let mods = { shift: false };
     let showMask = true;
 
-    $: map = session && maps[session.activeMapId] || null;
+    $: if (session && maps[session.activeMapId]) {
+        map = maps[session.activeMapId];
+        let rows = map.grid.split('\n');
+        mapSize = { width: rows[0].length, height: rows.length };
+    }
 
     if (process.browser) {
         socket = SocketIO(`/${page.params.sessionId}`);
-        socket.on('initialize:session', s => { session = s; console.log(s); });
-        socket.on('update:session',     s => { session = s; console.log(s); });
-        socket.on('initialize:map',     m => { maps[m.id] = m; console.log(m); });
-        socket.on('update:map',         m => { maps[m.id] = m; console.log(m); });
+        socket.on('initialize:session', s => { session = s;    /* console.log(s); */ });
+        socket.on('update:session',     s => { session = s;    /* console.log(s); */ });
+        socket.on('initialize:map',     m => { maps[m.id] = m; /* console.log(m); */ });
+        socket.on('update:map',         m => { maps[m.id] = m; /* console.log(m); */ });
         socket.connect();
 
         document.addEventListener('keydown', e => {
@@ -77,12 +83,12 @@
         const commit = (_cells) => {
             const cells = _cells.map(vec => ({
                 ...vec,
-                val: tool.mode === 'draw' ? tool.mat : 0
+                val: tool.mode === 'draw' ? tool.mat : ' '
             }));
-            const grid = Util.setCells(map.map, cells);
+            const grid = Util.setCells(map.grid, cells);
 
             socket.emit('update:map', {
-                id: map.id, map: { grid }
+                id: map.id, grid
             }, (res) => {});
 
             tool = { ...tool, temp: null };
@@ -91,12 +97,12 @@
         const commitMask = (_cells) => {
             const cells = _cells.map(vec => ({
                 ...vec,
-                val: tool.mode === 'draw' ? 1 : 0
+                val: tool.mode === 'draw' ? '#' : ' '
             }));
-            const mask = Util.setCells2(map.map.mask, map.map.size, cells);
+            const mask = Util.setCells(map.mask, cells);
 
             socket.emit('update:map', {
-                id: map.id, map: { mask }
+                id: map.id, mask
             }, (res) => {});
 
 
@@ -197,16 +203,6 @@
 </script>
 
 <div>
-    {#if session}
-        <span>Maps:</span>
-        <select bind:value={session.activeMapId} on:blur={handleSyncActiveMap}>
-            {#each Object.entries(maps || {}) as [ id, m ]}
-                <option value={id}>{id}</option>
-            {/each}
-        </select>
-        <button on:click={handleDuplicateMap}>Duplicate Map</button>
-        <button on:click={handleNewMap}>New Map</button>
-    {/if}
 
 
     <button style={showMask && 'background: #ddd'} on:click={() => showMask = !showMask}>Show Mask</button>
@@ -219,7 +215,7 @@
         <div class="tabletop">
             <svg
                 width={`${100 * zoom}%`}
-                viewBox={`0 0 ${map.map.size.width} ${map.map.size.height}`}
+                viewBox={`0 0 ${mapSize.width} ${mapSize.height}`}
                 shape-rendering="crispEdges"
                 on:mousedown={e => handleGridToolMouseDown(e)}
             >
@@ -252,17 +248,18 @@
                 </defs>
 
                 <mask id="fogOfWar">
-                    {#each Util.mapGrid2(map.map.mask, map.map.size, (val, x, y) => ({ val, x, y})) as { val, x, y }}
+                    {#each Util.mapGridStr(map.mask, (val, x, y) => ({ val, x, y})) as { val, x, y }}
                         <rect
                             x={x} y={y}
                             width={1} height={1}
-                            fill={(val === 0 && '#fff') || '#aaa'}
+                            fill={(val === ' ' && '#fff') || '#aaa'}
                             />
                     {/each}
                 </mask>
 
+
                 <g mask={showMask ? 'url(#fogOfWar)' : ''}>
-                    {#each Util.mapGrid(map.map, (val, x, y) => ({ val, x, y})) as { val, x, y }}
+                    {#each Util.mapGridStr(map.grid, (val, x, y) => ({ val, x, y })) as { val, x, y }}
                         <Cell x={x} y={y} val={val} />
                     {/each}
 
@@ -294,51 +291,73 @@
             </svg>
         </div>
         <div class="sidebar">
-            <div>
-                <span>Mode:</span>
+            {#if session}
+                <fieldset>
+                    <legend>Map</legend>
+                    <label class="row">
+                        Maps:&nbsp;
+                        <select bind:value={session.activeMapId} on:blur={handleSyncActiveMap}>
+                            {#each Object.entries(maps || {}) as [ id, m ]}
+                                <option value={id}>{id}</option>
+                            {/each}
+                        </select>
+                    </label>
+
+                    <button on:click={handleDuplicateMap}>Duplicate Map</button>
+                    <button on:click={handleNewMap}>New Map</button>
+
+                    <label class="row">
+                        Map Name:&nbsp;<input type="text" bind:value={map.name} />
+                    </label>
+                </fieldset>
+            {/if}
+
+            <fieldset>
+                <legend>Mode:</legend>
                 <button style={mode === 'map' && 'background: #ddd'}    on:click={() => mode = 'map'}>Map</button>
                 <button style={mode === 'mask' && 'background: #ddd'}   on:click={() => mode = 'mask'}>Mask</button>
                 <button style={mode === 'tokens' && 'background: #ddd'} on:click={() => mode = 'tokens'}>Token</button>
-            </div>
+            </fieldset>
 
             <hr />
 
-            {#if ['map', 'mask'].includes(mode)}
-            <span>Tool:</span>
-            <button style={tool.type === 'pen' && 'background: #ddd'}         on:click={() => tool.type = 'pen'}>Pen</button>
-            <button style={tool.type === 'line' && 'background: #ddd'}        on:click={() => tool.type = 'line'}>Line</button>
-            <button style={tool.type === 'rect' && 'background: #ddd'}        on:click={() => tool.type = 'rect'}>Rectangle</button>
-            <button style={tool.type === 'filled-rect' && 'background: #ddd'} on:click={() => tool.type = 'filled-rect'}>Filled Rectangle</button>
-            <hr />
-            {/if}
+            <fieldset>
+                <legend>Tool:</legend>
+                {#if ['map', 'mask'].includes(mode)}
+                    <div>
+                        <button style={tool.type === 'pen' && 'background: #ddd'}         on:click={() => tool.type = 'pen'}>Pen</button>
+                        <button style={tool.type === 'line' && 'background: #ddd'}        on:click={() => tool.type = 'line'}>Line</button>
+                        <button style={tool.type === 'rect' && 'background: #ddd'}        on:click={() => tool.type = 'rect'}>Rectangle</button>
+                        <button style={tool.type === 'filled-rect' && 'background: #ddd'} on:click={() => tool.type = 'filled-rect'}>Filled Rectangle</button>
+                    </div>
+                {/if}
 
-            {#if mode === 'map'}
-            <span>Material:</span>
-            <button style={tool.mat === 1 && 'background: #ddd'} on:click={() => tool.mat = 1}>Wall</button>
-            <button style={tool.mat === 2 && 'background: #ddd'} on:click={() => tool.mat = 2}>Path</button>
-            <button style={tool.mat === 3 && 'background: #ddd'} on:click={() => tool.mat = 3}>Water</button>
-            <button style={tool.mat === 4 && 'background: #ddd'} on:click={() => tool.mat = 4}>Dirt</button>
-            <button style={tool.mat === 5 && 'background: #ddd'} on:click={() => tool.mat = 5}>Grass</button>
-            <hr />
-            {/if}
+                {#if mode === 'map'}
+                    <div>
+                        {#each TILE_TYPES as tile }
+                            <button style={tool.mat === tile.value && 'background: #ddd'} on:click={() => tool.mat = tile.value}>{tile.name}</button>&nbsp;
+                        {/each}
+                    </div>
+                {/if}
 
-            {#if selectedToken}
-                <div>
-                    <img src={selectedToken.url} width="100" />
-                    <label class="row">
-                        URL:&nbsp;<input type="text" bind:value={selectedToken.url} />
-                    </label>
-                    <label class="row">
-                        Scale:&nbsp;<input type="number" bind:value={selectedToken.scale} on:change={handleSyncActiveToken} />
-                    </label>
-                    <label class="row">
-                        X:&nbsp;<input type="number" bind:value={selectedToken.x} on:change={handleSyncActiveToken} />
-                    </label>
-                    <label class="row">
-                        Y:&nbsp;<input type="number" bind:value={selectedToken.y} on:change={handleSyncActiveToken} />
-                    </label>
-                </div>
-            {/if}
+                {#if selectedToken}
+                    <div>
+                        <img src={selectedToken.url} width="100" />
+                        <label class="row">
+                            URL:&nbsp;<input type="text" bind:value={selectedToken.url} />
+                        </label>
+                        <label class="row">
+                            Scale:&nbsp;<input type="number" bind:value={selectedToken.scale} on:change={handleSyncActiveToken} />
+                        </label>
+                        <label class="row">
+                            X:&nbsp;<input type="number" bind:value={selectedToken.x} on:change={handleSyncActiveToken} />
+                        </label>
+                        <label class="row">
+                            Y:&nbsp;<input type="number" bind:value={selectedToken.y} on:change={handleSyncActiveToken} />
+                        </label>
+                    </div>
+                {/if}
+            </fieldset>
         </div>
     </div>
 {/if}

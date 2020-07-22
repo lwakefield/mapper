@@ -1,21 +1,34 @@
 <script>
+    import { TILE_TYPES } from '../tiles.js';
+
     export let handleMouseDown = () => {};
     export let x, y, val = null;
     let props;
-    $: props = (val === 0 && {fill: '#fff', stroke: '#eee'})
-        || (val === 1 && {fill: 'url(#hatch)'})
-        || (val === 2 && {fill: 'url(#stripe)'})
-        || (val === 3 && {fill: '#6960EC'})
-        || (val === 4 && {fill: '#835C3B'})
-        || (val === 5 && {fill: '#4CC417'})
-        || { fill: 'purple' };
+    $: props = (val === ' ' && {fill: '#fff', stroke: '#eee'})
+        || (val === '#' && {href: 'tiles/brick-000.png'})
+        || (val === '.' && {href: 'tiles/cobblestone-000.png'})
+        || (val === 'w' && {href: 'tiles/water-000.png'})
+        || (val === '@' && {href: 'tiles/dirt-000.png'})
+        || (val === '"' && {href: 'tiles/grass-000.png'})
+        || {fill: 'purple'}
+    ;
 </script>
 
-<rect
-    x={x} y={y}
-    width={1} height={1}
+{#if props.href}
+<image
     on:mousedown={handleMouseDown}
+    x={x} y={y}
+    width=1 height=1
     {...props}
-    vector-effect="non-scaling-stroke"
-    stroke-width="1px"
+    style="image-rendering: -moz-crisp-edges; image-rendering: pixelated;"
 />
+{:else}
+    <rect
+        x={x} y={y}
+        width={1} height={1}
+        {...props}
+        vector-effect="non-scaling-stroke"
+        stroke-width="1px"
+        stroke="#eee"
+    />
+{/if}

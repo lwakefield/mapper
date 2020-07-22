@@ -7,18 +7,15 @@ export function makeWorld (id) {
     }
 }
 
+const BASE_MAP = (new Array(64)).fill(' '.repeat(64)).join('\n');
 export function makeMap (sessionId) {
     const mapId = uuid();
 
     return {
         id: mapId,
         sessionId,
-        transform: { x: 0, y: 0, scale: 1 },
-        map: {
-            size: { width: 64, height: 64 },
-            grid: (new Array(64 * 64)).fill(0),
-            mask: (new Array(64 * 64)).fill(0)
-        },
+        grid: BASE_MAP,
+        mask: BASE_MAP,
         gmTokens: {},
     };
 }
