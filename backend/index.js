@@ -40,12 +40,14 @@ io.of(UUID_RGX).on('connection', async socket => {
 
 
     r.table('maps').filter({ sessionId: id }).changes().run(conn, (err, cursor) => {
+        socket.on('disconnect', () => { cursor.close() });
         cursor.each((err, row) => {
             !err && socket.emit('update:map', row.new_val);
         });
     });
 
     r.table('sessions').get(id).changes().run(conn, (err, cursor) => {
+        socket.on('disconnect', () => cursor.close());
         cursor.each((err, row) => {
             !err && socket.emit('update:sessions', row.new_val);
         });
@@ -58,7 +60,7 @@ io.of(UUID_RGX).on('connection', async socket => {
             let startUpdate = performance.now();
             // TODO: DANGER accepting arbitrary id
             const { id, ...payload } = data;
-            r.table(table).get(id).update(payload).run(conn, (err, res) => {
+            r.table(table).get(id).update(payload, { durability: 'soft' }).run(conn, (err, res) => {
                 (res.replaced === 1) && console.log(`Updated ${singular}:${id} in ${performance.now() - startUpdate}ms`);
                 (res.replaced === 0) && console.error(`Did not update ${singular}:${id} in ${performance.now() - startUpdate}ms`, err);
 
