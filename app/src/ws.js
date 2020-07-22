@@ -63,7 +63,7 @@ export const handleConnection = async socket => {
     RethinkDB.table('sessions').get(id).changes().run(conn, (err, cursor) => {
         socket.on('disconnect', () => cursor.close());
         cursor.each((err, row) => {
-            !err && socket.emit('update:sessions', row.new_val);
+            !err && socket.emit('update:session', row.new_val);
         });
     });
 

@@ -3,7 +3,6 @@
         overflow: scroll;
         padding-right: 10px;
         padding-bottom: 10px;
-        flex-grow: 1;
     }
     .row {
         display: flex;
@@ -12,6 +11,10 @@
     .sidebar {
         width: 350px;
         padding: 10px;
+    }
+    .vspace {
+        margin-top: 5px;
+        margin-bottom: 5px;
     }
 </style>
 
@@ -43,7 +46,7 @@
     let mode = 'map';
     let zoom = 1.0;
     let selectedToken = null;
-    let tool = { type: 'line', mode: 'draw', mat: '#', temp: null };
+    let tool = { type: 'pen', mode: 'draw', mat: '#', temp: null };
     let mods = { shift: false };
     let showMask = true;
 
@@ -56,7 +59,7 @@
     if (process.browser) {
         socket = SocketIO(`/${page.params.sessionId}`);
         socket.on('initialize:session', s => { session = s;    /* console.log(s); */ });
-        socket.on('update:session',     s => { session = s;    /* console.log(s); */ });
+        socket.on('update:session',     s => { session = s;    console.log(s); });
         socket.on('initialize:map',     m => { maps[m.id] = m; /* console.log(m); */ });
         socket.on('update:map',         m => { maps[m.id] = m; /* console.log(m); */ });
         socket.connect();
@@ -71,6 +74,34 @@
         });
     }
 
+    async function updateSession (payload) {
+        return new Promise((resolve, reject) => {
+            socket.emit('update:session', {
+                id: session.id, ...payload
+            }, (res) => {
+                resolve();
+            });
+        })
+    }
+
+    function updateActiveMap (payload) {
+        return new Promise((resolve, reject) => {
+            socket.emit('update:map', {
+                id: map.id, ...payload
+            }, (res) => {
+                resolve();
+            });
+        })
+    }
+
+    function insertMap (payload) {
+        return new Promise((resolve, reject) => {
+            socket.emit('insert:map', payload, (res) => {
+                resolve();
+            });
+        })
+    }
+
 
     async function handleMapMaskToolMouseDown (ev) {
         if (ev.button !== 0) return;
@@ -80,31 +111,26 @@
         const update = (cells) => {
             tool = { ...tool, temp: cells };
         };
-        const commit = (_cells) => {
+        const commit = async (_cells) => {
             const cells = _cells.map(vec => ({
                 ...vec,
                 val: tool.mode === 'draw' ? tool.mat : ' '
             }));
             const grid = Util.setCells(map.grid, cells);
 
-            socket.emit('update:map', {
-                id: map.id, grid
-            }, (res) => {});
+            await updateActiveMap({ grid });
 
             tool = { ...tool, temp: null };
         }
 
-        const commitMask = (_cells) => {
+        const commitMask = async (_cells) => {
             const cells = _cells.map(vec => ({
                 ...vec,
                 val: tool.mode === 'draw' ? '#' : ' '
             }));
             const mask = Util.setCells(map.mask, cells);
 
-            socket.emit('update:map', {
-                id: map.id, mask
-            }, (res) => {});
-
+            await updateActiveMap({ grid });
 
             tool = { ...tool, temp: null };
         };
@@ -124,11 +150,8 @@
             if (ev.button !== 0) return;
 
             const token = { ...makeToken(), ...Tools.toSVGPoint(ev) };
-            map.gmTokens[token.id] = token;
 
-            socket.emit('update:map', {
-                id: map.id, gmTokens: map.gmTokens
-            }, (res) => {});
+            await updateActiveMap({ gmTokens: { [token.id]: token } });
         }
     }
 
@@ -158,53 +181,37 @@
                 token.y += dy;
                 map = { ...map };
             };
-            const commit = ({ dx, dy }) => {
+            const commit = async ({ dx, dy }) => {
                 const token = map.gmTokens[tokenId];
                 token.x += dx;
                 token.y += dy;
                 map = { ...map };
 
-                socket.emit('update:map', {
-                    id: map.id, gmTokens: { [tokenId]: token }
-                }, (res) => {});
+                await updateActiveMap({ gmTokens: { [token.id]: token } });
             }
             Tools.movetool(ev, update, commit);
         }
     }
 
-    async function handleSyncActiveMap () {
-        socket.emit('update:session', {
-            id: session.id,
-            activeMapId: session.activeMapId,
-        }, (res) => {});
-    }
-
     async function handleSyncActiveToken () {
-        socket.emit('update:map', {
-            id: map.id,
-            gmTokens: { [selectedToken.id]: selectedToken },
-        }, (res) => {});
+        await updateActiveMap({ gmTokens: { [selectedToken.id]: selectedToken } });
     }
 
     async function handleDuplicateMap (e) {
         const newMap = JSON.parse(JSON.stringify(map));
         newMap.id = uuid.v4();
-        socket.emit('insert:map', newMap, (res) => {});
-        session.activeMapId = newMap.id;
-        handleSyncActiveMap();
+        await insertMap(newMap);
+        await updateSession({ activeMapId: newMap.id });
     }
 
     async function handleNewMap (e) {
         const newMap = makeMap(session.id);
-        socket.emit('insert:map', newMap, (res) => {});
-        session.activeMapId = newMap.id;
-        handleSyncActiveMap();
+        await insertMap(newMap);
+        await updateSession({ activeMapId: newMap.id });
     }
 </script>
 
 <div>
-
-
     <button style={showMask && 'background: #ddd'} on:click={() => showMask = !showMask}>Show Mask</button>
     <button on:click={() => zoom *= 1.2}>Zoom In</button>
     <button on:click={() => zoom /= 1.2}>Zoom Out</button>
@@ -290,21 +297,26 @@
 
             </svg>
         </div>
+
         <div class="sidebar">
             {#if session}
                 <fieldset>
                     <legend>Map</legend>
                     <label class="row">
-                        Maps:&nbsp;
-                        <select bind:value={session.activeMapId} on:blur={handleSyncActiveMap}>
+                        <div style="max-height: 200px; width: 100%; overflow: scroll;">
                             {#each Object.entries(maps || {}) as [ id, m ]}
-                                <option value={id}>{id}</option>
+                                <div
+                                    style={session.activeMapId === id && 'background: #ddd'}
+                                    on:click={() => updateSession({ activeMapId: id })}
+                                >{id}</div>
                             {/each}
-                        </select>
+                        </div>
                     </label>
 
-                    <button on:click={handleDuplicateMap}>Duplicate Map</button>
-                    <button on:click={handleNewMap}>New Map</button>
+                    <div class="vspace">
+                        <button on:click={handleDuplicateMap}>Duplicate Map</button>
+                        <button on:click={handleNewMap}>New Map</button>
+                    </div>
 
                     <label class="row">
                         Map Name:&nbsp;<input type="text" bind:value={map.name} />
@@ -312,28 +324,29 @@
                 </fieldset>
             {/if}
 
-            <fieldset>
-                <legend>Mode:</legend>
-                <button style={mode === 'map' && 'background: #ddd'}    on:click={() => mode = 'map'}>Map</button>
-                <button style={mode === 'mask' && 'background: #ddd'}   on:click={() => mode = 'mask'}>Mask</button>
-                <button style={mode === 'tokens' && 'background: #ddd'} on:click={() => mode = 'tokens'}>Token</button>
-            </fieldset>
-
             <hr />
 
             <fieldset>
                 <legend>Tool:</legend>
+                <div class="vspace">
+                    <span>Mode:&nbsp;</span>
+                    <button style={mode === 'map' && 'background: #ddd'}    on:click={() => mode = 'map'}>Map</button>
+                    <button style={mode === 'mask' && 'background: #ddd'}   on:click={() => mode = 'mask'}>Mask</button>
+                    <button style={mode === 'tokens' && 'background: #ddd'} on:click={() => mode = 'tokens'}>Token</button>
+                </div>
+
                 {#if ['map', 'mask'].includes(mode)}
-                    <div>
+                    <div class="vspace">
+                        <span>Tool:&nbsp;</span>
                         <button style={tool.type === 'pen' && 'background: #ddd'}         on:click={() => tool.type = 'pen'}>Pen</button>
                         <button style={tool.type === 'line' && 'background: #ddd'}        on:click={() => tool.type = 'line'}>Line</button>
-                        <button style={tool.type === 'rect' && 'background: #ddd'}        on:click={() => tool.type = 'rect'}>Rectangle</button>
-                        <button style={tool.type === 'filled-rect' && 'background: #ddd'} on:click={() => tool.type = 'filled-rect'}>Filled Rectangle</button>
+                        <button style={tool.type === 'rect' && 'background: #ddd'}        on:click={() => tool.type = 'rect'}>Rect</button>
+                        <button style={tool.type === 'filled-rect' && 'background: #ddd'} on:click={() => tool.type = 'filled-rect'}>Fill Rect</button>
                     </div>
                 {/if}
 
                 {#if mode === 'map'}
-                    <div>
+                    <div class="vspace">
                         {#each TILE_TYPES as tile }
                             <button style={tool.mat === tile.value && 'background: #ddd'} on:click={() => tool.mat = tile.value}>{tile.name}</button>&nbsp;
                         {/each}
