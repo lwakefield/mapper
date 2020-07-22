@@ -16,6 +16,9 @@
         margin-top: 5px;
         margin-bottom: 5px;
     }
+    .selected {
+        background: #ddd;
+    }
 </style>
 
 <script context="module">
@@ -197,9 +200,10 @@
         await updateActiveMap({ gmTokens: { [selectedToken.id]: selectedToken } });
     }
 
-    async function handleDuplicateMap (e) {
+    async function handleCloneMap (m) {
         const newMap = JSON.parse(JSON.stringify(map));
         newMap.id = uuid.v4();
+        newMap.name += ' copy';
         await insertMap(newMap);
         await updateSession({ activeMapId: newMap.id });
     }
@@ -302,24 +306,26 @@
             {#if session}
                 <fieldset>
                     <legend>Map</legend>
-                    <label class="row">
-                        <div style="max-height: 200px; width: 100%; overflow: scroll;">
-                            {#each Object.entries(maps || {}) as [ id, m ]}
-                                <div
-                                    style={session.activeMapId === id && 'background: #ddd'}
-                                    on:click={() => updateSession({ activeMapId: id })}
-                                >{id}</div>
-                            {/each}
-                        </div>
-                    </label>
 
-                    <div class="vspace">
-                        <button on:click={handleDuplicateMap}>Duplicate Map</button>
-                        <button on:click={handleNewMap}>New Map</button>
+                    <div style="max-height: 200px; width: 100%; overflow: scroll;">
+                        {#each Object.entries(maps || {}) as [ id, m ]}
+                            <div class:selected={session.activeMapId === id} style="display: flex; justify-content: space-between;">
+                                <div
+                                    style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; width: 150px;"
+                                    on:click={e => updateSession({ activeMapId: id }) }
+                                >{m.name}</div>
+
+                                <button on:click={e => handleCloneMap(m)}>Clone</button>
+                            </div>
+                        {/each}
+                        <div>
+                            <button on:click={handleNewMap}>New Map</button>
+                        </div>
+
                     </div>
 
                     <label class="row">
-                        Map Name:&nbsp;<input type="text" bind:value={map.name} />
+                        Map Name:&nbsp;<input type="text" value={map.name} on:blur={e => updateActiveMap({ name: e.target.value })} />
                     </label>
                 </fieldset>
             {/if}

@@ -13,6 +13,7 @@ export function makeMap (sessionId) {
 
     return {
         id: mapId,
+        name: mapId,
         sessionId,
         grid: BASE_MAP,
         mask: BASE_MAP,
