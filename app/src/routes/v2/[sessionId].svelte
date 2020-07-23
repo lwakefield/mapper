@@ -243,26 +243,15 @@
                         <circle cx="0.5" cy="0.5" r="0.5" />
                     </clipPath>
 
-                    <pattern id="stripe" width={0.7 / zoom} height={0.7 / zoom} patternUnits="userSpaceOnUse" >
-                        <line x1="0" y1="0" x2={0.7 / zoom} y2={0.7 / zoom}
-                            stroke="black"
-                            vector-effect="non-scaling-stroke"
-                            stroke-width="1px"
-                        />
-                    </pattern>
-
-                    <pattern id="hatch" width={0.5 / zoom} height={0.5 / zoom} patternTransform="rotate(-5)" patternUnits="userSpaceOnUse" >
-                        <line x1="0" y1="0" x2={0.5 / zoom} y2={0.5 / zoom}
-                            stroke="black"
-                            vector-effect="non-scaling-stroke"
-                            stroke-width="2px"
-                        />
-                        <line x1={0} y1={0.5 / zoom} x2={0.5 / zoom} y2={0}
-                            stroke="black"
-                            vector-effect="non-scaling-stroke"
-                            stroke-width="2px"
-                        />
-                    </pattern>
+                    {#each TILE_TYPES as tile}
+                        <pattern id={tile.id} width=1 height=1 patternUnits="userSpaceOnUse" >
+                            <image
+                                width=1 height=1
+                                href="tiles/{tile.id}.png"
+                                style="image-rendering: -moz-crisp-edges; image-rendering: pixelated;"
+                            />
+                        </pattern>
+                    {/each}
                 </defs>
 
                 <mask id="fogOfWar">
