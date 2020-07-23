@@ -31,3 +31,12 @@ export function makeToken (layer) {
         url: `https://api.adorable.io/avatars/285/token-${Math.random()}.png`
     }
 }
+
+export function makeMessage (sessionId, from, message) {
+    return {
+        id: uuid(),
+        sessionId,
+        from,
+        message,
+    }
+}

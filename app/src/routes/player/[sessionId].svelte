@@ -23,6 +23,7 @@
     import Map from '../../components/Map.svelte';
     import Tokens from '../../components/Map/Tokens.svelte';
     import FOW from '../../components/Map/FOW.svelte';
+    import Chat from '../../components/Chat.svelte';
     import * as Tools from '../../tools.js';
 
     export let page;
@@ -92,12 +93,20 @@
                 {/if}
             </Map>
         </div>
-        <div class="sidebar">
-            <div class="row vspace">
-                <button on:click={() => zoom *= 1.2}>Zoom In</button>
-                &nbsp;
-                <button on:click={() => zoom /= 1.2}>Zoom Out</button>
-            </div>
+        <div class="sidebar col">
+            <fieldset class="col hide-overflow">
+                <legend>Display</legend>
+
+                <div class="vspace">
+                    <button on:click={() => zoom *= 1.2}>Zoom In</button>
+                    <button on:click={() => zoom /= 1.2}>Zoom Out</button>
+                </div>
+            </fieldset>
+
+            <fieldset class="col hide-overflow">
+                <legend>Chat</legend>
+                <Chat />
+            </fieldset>
         </div>
     </div>
 {/if}

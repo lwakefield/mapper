@@ -1,7 +1,7 @@
 import SocketIO from 'socket.io-client';
 import { writable, get } from 'svelte/store';
 
-export const store = writable({ session: null, maps: {} });
+export const store = writable({ session: null, maps: {}, messages: [] });
 
 function syncSession (session) {
     store.update(state => Object({ ...state, session }));
@@ -15,14 +15,30 @@ function syncMap (map) {
         }
     }));
 }
+function initMessages (messages) {
+    store.update(state => {
+        return { ...state, messages, };
+    });
+}
+function syncMessage (message) {
+    store.update(state => {
+        const newMessages = [ ...state.messages, message ];
+        return {
+            ...state,
+            messages: newMessages,
+        };
+    });
+}
 
 let socket = null;
 export function init (sessionId) {
     socket = SocketIO(`/${sessionId}`);
-    socket.on('initialize:session', syncSession);
-    socket.on('update:session',     syncSession);
-    socket.on('initialize:map',     syncMap);
-    socket.on('update:map',         syncMap);
+    socket.on('initialize:session',  syncSession);
+    socket.on('update:session',      syncSession);
+    socket.on('initialize:map',      syncMap);
+    socket.on('update:map',          syncMap);
+    socket.on('initialize:messages', initMessages);
+    socket.on('update:message',      syncMessage);
     socket.connect();
 }
 
@@ -51,6 +67,14 @@ export function updateActiveMap (payload) {
 export function insertMap (payload) {
     return new Promise((resolve, reject) => {
         socket.emit('insert:map', payload, (res) => {
+            resolve();
+        });
+    })
+}
+
+export function insertMessage (payload) {
+    return new Promise((resolve, reject) => {
+        socket.emit('insert:message', payload, (res) => {
             resolve();
         });
     })

@@ -57,6 +57,16 @@ button:hover {
 	display: flex;
 	flex-flow: row;
 }
+.col {
+	display: flex;
+	flex-flow: column;
+}
+.hide-overflow {
+	overflow: hidden;
+}
+.scroll-overflow {
+	overflow: scroll;
+}
 .vspace {
 	margin-top: 5px;
 	margin-bottom: 5px;

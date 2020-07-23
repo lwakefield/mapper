@@ -13,6 +13,9 @@
     .selected {
         background: #ddd;
     }
+    .collapse :not(legend) {
+        display: none;
+    }
 </style>
 
 <script context="module">
@@ -24,12 +27,12 @@
 <script>
     import { stores } from '@sapper/app';
     import * as uuid from 'uuid';
-    import SocketIO from 'socket.io-client';
 
     import Cell from '../../components/Cell.svelte';
     import Map from '../../components/Map.svelte';
     import FOW from '../../components/Map/FOW.svelte';
     import Tokens from '../../components/Map/Tokens.svelte';
+    import Chat from '../../components/Chat.svelte';
 
     import * as Game from '../../stores/game.js';
 
@@ -40,12 +43,15 @@
 
     export let page;
 
-    let socket = null;
+    // vars from store
     let session, maps;
+
+    // calculated vars
     let map = null;
     let gmTokens = [];
     let playerTokens = [];
     let mapSize = null;
+
     let mode = 'map';
     let zoom = 1.0;
     let selectedToken = null;
@@ -253,35 +259,31 @@
             </Map>
         </div>
 
-        <div class="sidebar">
-            {#if session}
-                <fieldset>
-                    <legend>Map</legend>
+        <div class="sidebar col">
+            <fieldset>
+                <legend>Map</legend>
 
-                    <div style="max-height: 200px; width: 100%; overflow: scroll;">
-                        {#each Object.entries(maps || {}) as [ id, m ]}
-                            <div class:selected={session.activeMapId === id} style="display: flex; justify-content: space-between;">
-                                <div
-                                    style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; width: 150px;"
-                                    on:click={e => Game.updateSession({ activeMapId: id }) }
-                                >{m.name}</div>
+                <div style="max-height: 200px; width: 100%; overflow: scroll;">
+                    {#each Object.entries(maps || {}) as [ id, m ]}
+                        <div class:selected={session.activeMapId === id} style="display: flex; justify-content: space-between;">
+                            <div
+                                style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; width: 150px;"
+                                on:click={e => Game.updateSession({ activeMapId: id }) }
+                            >{m.name}</div>
 
-                                <button on:click={e => handleCloneMap(m)}>Clone</button>
-                            </div>
-                        {/each}
-                        <div>
-                            <button on:click={handleNewMap}>New Map</button>
+                            <button on:click={e => handleCloneMap(m)}>Clone</button>
                         </div>
-
+                    {/each}
+                    <div>
+                        <button on:click={handleNewMap}>New Map</button>
                     </div>
 
-                    <label class="row">
-                        Map Name:&nbsp;<input type="text" value={map.name} on:blur={e => Game.updateActiveMap({ name: e.target.value })} />
-                    </label>
-                </fieldset>
-            {/if}
+                </div>
 
-            <hr />
+                <label class="row">
+                    Map Name:&nbsp;<input type="text" value={map.name} on:blur={e => Game.updateActiveMap({ name: e.target.value })} />
+                </label>
+            </fieldset>
 
             <fieldset>
                 <legend>Tool:</legend>
@@ -359,6 +361,11 @@
                     />
                 </div>
 
+            </fieldset>
+
+            <fieldset class="col hide-overflow">
+                <legend>Chat</legend>
+                <Chat />
             </fieldset>
         </div>
     </div>

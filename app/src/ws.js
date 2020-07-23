@@ -22,6 +22,10 @@ export const ws = async server => {
         await RethinkDB.tableCreate('maps').run(conn);
         await RethinkDB.table('maps').indexCreate('sessionId').run(conn);
     } catch (e) { /* happens if table already exists */ }
+    try {
+        await RethinkDB.tableCreate('messages').run(conn);
+        await RethinkDB.table('messages').indexCreate('sessionId').run(conn);
+    } catch (e) { /* happens if table already exists */ }
 
     SocketIO(server).of(UUID_RGX).on('connection', handleConnection);
 };
@@ -35,10 +39,16 @@ export const handleConnection = async socket => {
     let session = await RethinkDB.table('sessions').get(id).run(conn);
     if (session) {
         let maps = await RethinkDB.table('maps').filter({ sessionId: id }).run(conn);
+        let messages = await RethinkDB.table('messages')
+            .filter({ sessionId: id })
+            .orderBy(RethinkDB.desc('timestamp'))
+            .limit(250)
+            .run(conn);
         socket.emit('initialize:session', session);
-        maps.each((err, map) => {
-            socket.emit('initialize:map', map);
-        });
+        maps.each((err, map) => { socket.emit('initialize:map', map); });
+
+        messages.reverse();
+        socket.emit('initialize:messages', messages);
     } else {
         session = makeWorld(id);
         const map = makeMap(session.id);
@@ -48,10 +58,10 @@ export const handleConnection = async socket => {
         await RethinkDB.table('maps').insert(map).run(conn);
 
         console.log(`Initialized session:${id}`);
-        socket.emit('initialize:session', session);
-        socket.emit('initialize:map',     map);
+        socket.emit('initialize:session',  session);
+        socket.emit('initialize:map',      map);
+        socket.emit('initialize:messages', []);
     }
-
 
     RethinkDB.table('maps').filter({ sessionId: id }).changes().run(conn, (err, cursor) => {
         socket.on('disconnect', () => { cursor.close() });
@@ -59,13 +69,18 @@ export const handleConnection = async socket => {
             !err && socket.emit('update:map', row.new_val);
         });
     });
-
     RethinkDB.table('sessions').get(id).changes().run(conn, (err, cursor) => {
         socket.on('disconnect', () => cursor.close());
         cursor.each((err, row) => {
             !err && socket.emit('update:session', row.new_val);
         });
     });
+    RethinkDB.table('messages').filter({ sessionId: id }).changes().run(conn, (err, cursor) => {
+            socket.on('disconnect', () => cursor.close());
+            cursor.each((err, row) => {
+                !err && socket.emit('update:message', row.new_val);
+            });
+        });
 
     for (const table of ['maps', 'sessions']) {
         const singular = table.replace(/s$/, '');
@@ -92,6 +107,21 @@ export const handleConnection = async socket => {
         RethinkDB.table('maps').insert(data).run(conn, (err, res) => {
             (res.inserted === 1) && console.log(`Inserted map:${data.id} in ${performance.now() - startUpdate}ms`);
             (res.inserted === 0) && console.error(`Did not insert map:${data.id} in ${performance.now() - startUpdate}ms`, err);
+
+            if (callback) {
+                (res.inserted === 0 || err) && callback('error');
+                (res.inserted === 1 && !err) && callback('ok');
+            }
+        });
+    });
+
+    socket.on('insert:message', (data, callback) => {
+        let startUpdate = performance.now();
+        // TODO: DANGER accepting arbitrary id
+        data.timestamp = RethinkDB.now();
+        RethinkDB.table('messages').insert(data).run(conn, (err, res) => {
+            (res.inserted === 1) && console.log(`Inserted message:${data.id} in ${performance.now() - startUpdate}ms`);
+            (res.inserted === 0) && console.error(`Did not insert message:${data.id} in ${performance.now() - startUpdate}ms`, err);
 
             if (callback) {
                 (res.inserted === 0 || err) && callback('error');
