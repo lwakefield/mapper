@@ -382,10 +382,16 @@
             <fieldset>
                 <legend>Display</legend>
 
-                <button class:selected={displayOptions.mask} on:click={() => displayOptions.mask = !displayOptions.mask}>Show Mask</button>
-                <button class:selected={displayOptions.gmTokens} on:click={() => displayOptions.gmTokens = !displayOptions.gmTokens}>Show GM Tokens</button>
-                <button on:click={() => zoom *= 1.2}>Zoom In</button>
-                <button on:click={() => zoom /= 1.2}>Zoom Out</button>
+                <div class="row vspace">
+                    <button class:selected={displayOptions.mask} on:click={() => displayOptions.mask = !displayOptions.mask}>Show Mask</button>
+                    &nbsp;
+                    <button class:selected={displayOptions.gmTokens} on:click={() => displayOptions.gmTokens = !displayOptions.gmTokens}>Show GM Tokens</button>
+                </div>
+                <div class="row vspace">
+                    <button on:click={() => zoom *= 1.2}>Zoom In</button>
+                    &nbsp;
+                    <button on:click={() => zoom /= 1.2}>Zoom Out</button>
+                </div>
 
             </fieldset>
         </div>
