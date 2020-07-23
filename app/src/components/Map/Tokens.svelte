@@ -4,7 +4,7 @@
 </script>
 
 
-{#each Object.entries(tokens) as [ tokenId, token ]}
+{#each tokens as token}
     {#if token}
         <image
             x={token.x} y={token.y}
@@ -12,7 +12,7 @@
             height="auto"
             href={token.url}
             clip-path="url(#clip-avatar)"
-            on:mousedown={e => onmousedown(e, tokenId, token)}
+            on:mousedown={e => onmousedown(e, token.id, token)}
             {...$$restProps}
         />
     {/if}

@@ -6,17 +6,9 @@
         flex-basis: 0;
         flex-grow: 1;
     }
-    .row {
-        display: flex;
-        flex-flow: row;
-    }
     .sidebar {
         width: 350px;
         padding: 10px;
-    }
-    .vspace {
-        margin-top: 5px;
-        margin-bottom: 5px;
     }
     .selected {
         background: #ddd;
@@ -51,6 +43,8 @@
     let socket = null;
     let session, maps;
     let map = null;
+    let gmTokens = [];
+    let playerTokens = [];
     let mapSize = null;
     let mode = 'map';
     let zoom = 1.0;
@@ -59,7 +53,8 @@
     let mods = { shift: false };
     let displayOptions = {
         mask: true,
-        gmTokens: true
+        gmTokens: true,
+        playerTokens: true,
     };
 
     if (process.browser) {
@@ -71,6 +66,10 @@
                 map = maps[session.activeMapId];
                 let rows = map.grid.split('\n');
                 mapSize = { width: rows[0].length, height: rows.length };
+                playerTokens = Object.values(map.tokens)
+                    .filter(v => v.layer === 'player');
+                gmTokens = Object.values(map.tokens)
+                    .filter(v => v.layer === 'gm');
             }
         });
 
@@ -137,9 +136,9 @@
         } else if (mode === 'tokens') {
             if (ev.button !== 0) return;
 
-            const token = { ...makeToken(), ...Tools.toSVGPoint(ev) };
+            const token = { ...makeToken('gm'), ...Tools.toSVGPoint(ev) };
 
-            await Game.updateActiveMap({ gmTokens: { [token.id]: token } });
+            await Game.updateActiveMap({ tokens: { [token.id]: token } });
         }
     }
 
@@ -148,7 +147,7 @@
 
         if (mode !== 'token') mode = 'tokens';
 
-        selectedToken = map.gmTokens[tokenId];
+        selectedToken = map.tokens[tokenId];
 
         ev.stopPropagation();
 
@@ -158,33 +157,33 @@
             /* }, (res) => {}); */
         } else {
             if (ev.altKey) {
-                const token = JSON.parse(JSON.stringify(map.gmTokens[tokenId]));
+                const token = JSON.parse(JSON.stringify(map.tokens[tokenId]));
                 token.id = uuid.v4();
                 tokenId = token.id;
-                map.gmTokens[tokenId] = token;
+                map.tokens[tokenId] = token;
                 map = { ...map };
             }
 
             const update = ({ dx, dy }) => {
-                const token = map.gmTokens[tokenId];
+                const token = map.tokens[tokenId];
                 token.x += dx;
                 token.y += dy;
                 map = { ...map };
             };
             const commit = async ({ dx, dy }) => {
-                const token = map.gmTokens[tokenId];
+                const token = map.tokens[tokenId];
                 token.x += dx;
                 token.y += dy;
                 map = { ...map };
 
-                await Game.updateActiveMap({ gmTokens: { [token.id]: token } });
+                await Game.updateActiveMap({ tokens: { [token.id]: token } });
             }
             Tools.movetool(ev, update, commit);
         }
     }
 
     async function handleSyncActiveToken () {
-        await Game.updateActiveMap({ gmTokens: { [selectedToken.id]: selectedToken } });
+        await Game.updateActiveMap({ tokens: { [selectedToken.id]: selectedToken } });
     }
 
     async function handleCloneMap (m) {
@@ -222,7 +221,19 @@
 
                 {#if displayOptions.gmTokens}
                     <Tokens
-                        tokens={map.gmTokens}
+                        tokens={gmTokens}
+                        onmousedown={handleTokenMouseDown}
+                        style={`cursor: ${
+                            (mods.shift && 'not-allowed')
+                            || (mods.alt && 'copy')
+                            || 'move'
+                        }`}
+                    />
+                {/if}
+
+                {#if displayOptions.playerTokens}
+                    <Tokens
+                        tokens={playerTokens}
                         onmousedown={handleTokenMouseDown}
                         style={`cursor: ${
                             (mods.shift && 'not-allowed')
@@ -300,6 +311,13 @@
                             URL:&nbsp;<input type="text" bind:value={selectedToken.url} />
                         </label>
                         <label class="row">
+                            Layer:
+                            <select bind:value={selectedToken.layer} on:blur={handleSyncActiveToken}>
+                                <option value="gm">GM</option>
+                                <option value="player">Player</option>
+                            </select>
+                        </label>
+                        <label class="row">
                             Scale:&nbsp;<input type="number" bind:value={selectedToken.scale} on:change={handleSyncActiveToken} />
                         </label>
                         <label class="row">
@@ -315,10 +333,10 @@
             <fieldset>
                 <legend>Display</legend>
 
-                <div class="row vspace">
-                    <button class:selected={displayOptions.mask} on:click={() => displayOptions.mask = !displayOptions.mask}>Show Mask</button>
-                    &nbsp;
-                    <button class:selected={displayOptions.gmTokens} on:click={() => displayOptions.gmTokens = !displayOptions.gmTokens}>Show GM Tokens</button>
+                <div class="vspace">
+                    <button class:selected={displayOptions.mask} on:click={() => displayOptions.mask = !displayOptions.mask}>Mask</button>
+                    <button class:selected={displayOptions.gmTokens} on:click={() => displayOptions.gmTokens = !displayOptions.gmTokens}>GM Tokens</button>
+                    <button class:selected={displayOptions.playerTokens} on:click={() => displayOptions.playerTokens = !displayOptions.playerTokens}>Player Tokens</button>
                 </div>
                 <div class="row vspace">
                     <button on:click={() => zoom *= 1.2}>Zoom In</button>

@@ -1,3 +1,17 @@
+<style>
+    .tabletop {
+        overflow: scroll;
+        padding-right: 10px;
+        padding-bottom: 10px;
+        flex-basis: 0;
+        flex-grow: 1;
+    }
+    .sidebar {
+        width: 350px;
+        padding: 10px;
+    }
+</style>
+
 <script context="module">
     export async function preload(page, session) {
         return { page };
@@ -14,6 +28,7 @@
 
     let session, maps;
     let map;
+    let zoom = 1;
 
     if (process.browser) {
         Game.init(page.params.sessionId);
@@ -28,11 +43,22 @@
 </script>
 
 {#if map}
-    <Map grid={map.grid} zoom={1}>
-        <g slot="fogOfWar">
-            <FOW mask={map.mask} fill="#000" />
-        </g>
+    <div class="row" style="overflow: hidden">
+        <div class="tabletop">
+            <Map grid={map.grid} zoom={zoom}>
+                <g slot="fogOfWar">
+                <FOW mask={map.mask} fill="#000" />
+                </g>
 
-        <Tokens tokens={map.gmTokens} />
-    </Map>
+                <Tokens tokens={Object.values(map.tokens)} />
+            </Map>
+        </div>
+        <div class="sidebar">
+            <div class="row vspace">
+                <button on:click={() => zoom *= 1.2}>Zoom In</button>
+                &nbsp;
+                <button on:click={() => zoom /= 1.2}>Zoom Out</button>
+            </div>
+        </div>
+    </div>
 {/if}

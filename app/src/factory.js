@@ -17,13 +17,14 @@ export function makeMap (sessionId) {
         sessionId,
         grid: BASE_MAP,
         mask: BASE_MAP,
-        gmTokens: {},
+        tokens: {},
     };
 }
 
-export function makeToken () {
+export function makeToken (layer) {
     return {
         id: uuid(),
+        layer,
         x: 0,
         y: 0,
         scale: 1,

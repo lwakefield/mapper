@@ -52,3 +52,12 @@ button:hover {
 * {
 	box-sizing: border-box;
 }
+
+.row {
+	display: flex;
+	flex-flow: row;
+}
+.vspace {
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
