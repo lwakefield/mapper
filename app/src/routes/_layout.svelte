@@ -9,6 +9,7 @@
 		position: relative;
 		background-color: white;
 		box-sizing: border-box;
+		padding: 20px;
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;

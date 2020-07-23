@@ -36,6 +36,10 @@
 
     import Cell from '../../components/Cell.svelte';
     import Map from '../../components/Map.svelte';
+    import FOW from '../../components/Map/FOW.svelte';
+    import Tokens from '../../components/Map/Tokens.svelte';
+
+    import * as Game from '../../stores/game.js';
 
     import * as Util from '../../util.js';
     import * as Tools from '../../tools.js';
@@ -45,8 +49,7 @@
     export let page;
 
     let socket = null;
-    let session = null;
-    let maps = {};
+    let session, maps;
     let map = null;
     let mapSize = null;
     let mode = 'map';
@@ -57,21 +60,20 @@
     let displayOptions = {
         mask: true,
         gmTokens: true
-    }
-
-    $: if (session && maps[session.activeMapId]) {
-        map = maps[session.activeMapId];
-        let rows = map.grid.split('\n');
-        mapSize = { width: rows[0].length, height: rows.length };
-    }
+    };
 
     if (process.browser) {
-        socket = SocketIO(`/${page.params.sessionId}`);
-        socket.on('initialize:session', s => { session = s;    /* console.log(s); */ });
-        socket.on('update:session',     s => { session = s;    console.log(s); });
-        socket.on('initialize:map',     m => { maps[m.id] = m; /* console.log(m); */ });
-        socket.on('update:map',         m => { maps[m.id] = m; /* console.log(m); */ });
-        socket.connect();
+        Game.init(page.params.sessionId);
+        Game.store.subscribe(state => {
+            ({ session, maps } = state);
+
+            if (session && maps[session.activeMapId]) {
+                map = maps[session.activeMapId];
+                let rows = map.grid.split('\n');
+                mapSize = { width: rows[0].length, height: rows.length };
+            }
+        });
+
 
         document.addEventListener('keydown', e => {
             if (e.shiftKey) mods.shift = true;
@@ -82,35 +84,6 @@
             if (mods.alt && !e.altKey) mods.alt = false;
         });
     }
-
-    async function updateSession (payload) {
-        return new Promise((resolve, reject) => {
-            socket.emit('update:session', {
-                id: session.id, ...payload
-            }, (res) => {
-                resolve();
-            });
-        })
-    }
-
-    function updateActiveMap (payload) {
-        return new Promise((resolve, reject) => {
-            socket.emit('update:map', {
-                id: map.id, ...payload
-            }, (res) => {
-                resolve();
-            });
-        })
-    }
-
-    function insertMap (payload) {
-        return new Promise((resolve, reject) => {
-            socket.emit('insert:map', payload, (res) => {
-                resolve();
-            });
-        })
-    }
-
 
     async function handleMapMaskToolMouseDown (ev) {
         if (ev.button !== 0) return;
@@ -133,7 +106,7 @@
             }));
             const grid = Util.setCells(map.grid, cells);
 
-            await updateActiveMap({ grid });
+            await Game.updateActiveMap({ grid });
 
             tool = { ...tool, temp: null };
         }
@@ -145,7 +118,7 @@
             }));
             const mask = Util.setCells(map.mask, cells);
 
-            await updateActiveMap({ grid });
+            await Game.updateActiveMap({ mask });
 
             tool = { ...tool, temp: null };
         };
@@ -166,7 +139,7 @@
 
             const token = { ...makeToken(), ...Tools.toSVGPoint(ev) };
 
-            await updateActiveMap({ gmTokens: { [token.id]: token } });
+            await Game.updateActiveMap({ gmTokens: { [token.id]: token } });
         }
     }
 
@@ -204,102 +177,62 @@
                 token.y += dy;
                 map = { ...map };
 
-                await updateActiveMap({ gmTokens: { [token.id]: token } });
+                await Game.updateActiveMap({ gmTokens: { [token.id]: token } });
             }
             Tools.movetool(ev, update, commit);
         }
     }
 
     async function handleSyncActiveToken () {
-        await updateActiveMap({ gmTokens: { [selectedToken.id]: selectedToken } });
+        await Game.updateActiveMap({ gmTokens: { [selectedToken.id]: selectedToken } });
     }
 
     async function handleCloneMap (m) {
         const newMap = JSON.parse(JSON.stringify(map));
         newMap.id = uuid.v4();
         newMap.name += ' copy';
-        await insertMap(newMap);
-        await updateSession({ activeMapId: newMap.id });
+        await Game.insertMap(newMap);
+        await Game.updateSession({ activeMapId: newMap.id });
     }
 
     async function handleNewMap (e) {
         const newMap = makeMap(session.id);
-        await insertMap(newMap);
-        await updateSession({ activeMapId: newMap.id });
+        await Game.insertMap(newMap);
+        await Game.updateSession({ activeMapId: newMap.id });
     }
 </script>
 
 {#if map}
     <div class="row" style="overflow: hidden">
         <div class="tabletop">
-            <svg
-                width={`${100 * zoom}%`}
-                viewBox={`0 0 ${mapSize.width} ${mapSize.height}`}
-                shape-rendering="crispEdges"
-                on:mousedown={e => handleGridToolMouseDown(e)}
+            <Map
+                grid={map.grid} zoom={zoom}
+                onmousedown={e => handleGridToolMouseDown(e)}
             >
-
-                <defs>
-                    <clipPath id="clip-avatar" clipPathUnits="objectBoundingBox">
-                        <circle cx="0.5" cy="0.5" r="0.5" />
-                    </clipPath>
-
-                    {#each TILE_TYPES as tile}
-                        {#each tile.variants as [id, _]}
-                            <pattern id={id} width=1 height=1 patternUnits="userSpaceOnUse" >
-                                <image
-                                    width=1 height=1
-                                    href="tiles/{id}.png"
-                                    style="image-rendering: -moz-crisp-edges; image-rendering: pixelated;"
-                                />
-                            </pattern>
-                        {/each}
-                    {/each}
-                </defs>
-
-                <mask id="fogOfWar">
-                    {#each Util.mapGridStr(map.mask, (val, x, y) => ({ val, x, y})) as { val, x, y }}
-                        <rect
-                            x={x} y={y}
-                            width={1} height={1}
-                            fill={(val === ' ' && '#fff') || '#aaa'}
-                            />
-                    {/each}
-                </mask>
-
-
-                <g mask={displayOptions.mask ? 'url(#fogOfWar)' : ''}>
-
-                    <Map grid={map.grid} />
-
-                    {#if tool.temp }
-                        {#each tool.temp as {x, y}}
-                            <Cell x={x} y={y} fill="purple" stroke="#eee" />
-                        {/each}
-                    {/if}
-
-                    {#if displayOptions.gmTokens}
-                        {#each Object.entries(map.gmTokens) as [ tokenId, token ]}
-                            {#if token}
-                                <image
-                                    x={token.x} y={token.y}
-                                    on:mousedown={e => handleTokenMouseDown(e, tokenId)}
-                                    width={token.scale}
-                                    height="auto"
-                                    href={token.url}
-                                    clip-path="url(#clip-avatar)"
-                                    style={`cursor: ${
-                                    (mods.shift && 'not-allowed')
-                                    || (mods.alt && 'copy')
-                                    || 'move'
-                                    }`}
-                                />
-                            {/if}
-                        {/each}
-                    {/if}
+                <g slot="fogOfWar">
+                    <FOW
+                        mask={map.mask}
+                        fill={displayOptions.mask ? '#444' : '#fff'}
+                    />
                 </g>
 
-            </svg>
+                {#each tool.temp || [] as {x, y}}
+                    <Cell x={x} y={y} fill="purple" stroke="#eee" />
+                {/each}
+
+                {#if displayOptions.gmTokens}
+                    <Tokens
+                        tokens={map.gmTokens}
+                        onmousedown={handleTokenMouseDown}
+                        style={`cursor: ${
+                            (mods.shift && 'not-allowed')
+                            || (mods.alt && 'copy')
+                            || 'move'
+                        }`}
+                    />
+                {/if}
+
+            </Map>
         </div>
 
         <div class="sidebar">
@@ -312,7 +245,7 @@
                             <div class:selected={session.activeMapId === id} style="display: flex; justify-content: space-between;">
                                 <div
                                     style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; width: 150px;"
-                                    on:click={e => updateSession({ activeMapId: id }) }
+                                    on:click={e => Game.updateSession({ activeMapId: id }) }
                                 >{m.name}</div>
 
                                 <button on:click={e => handleCloneMap(m)}>Clone</button>
@@ -325,7 +258,7 @@
                     </div>
 
                     <label class="row">
-                        Map Name:&nbsp;<input type="text" value={map.name} on:blur={e => updateActiveMap({ name: e.target.value })} />
+                        Map Name:&nbsp;<input type="text" value={map.name} on:blur={e => Game.updateActiveMap({ name: e.target.value })} />
                     </label>
                 </fieldset>
             {/if}
@@ -391,6 +324,14 @@
                     <button on:click={() => zoom *= 1.2}>Zoom In</button>
                     &nbsp;
                     <button on:click={() => zoom /= 1.2}>Zoom Out</button>
+                </div>
+                <div class="row vspace">
+                    Player Link:
+                    <input
+                        type="text"
+                        readonly
+                        value={`${window.location.origin}/player/${page.params.sessionId}`}
+                    />
                 </div>
 
             </fieldset>
