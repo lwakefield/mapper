@@ -1,11 +1,27 @@
 export const TILE_TYPES = [
-	{ name: 'Wall',  value: '#', id: 'stone-000' },
-	{ name: 'Path',  value: '.', id: 'cobblestone-000' },
-	{ name: 'Water', value: 'w', id: 'water-000' },
-	{ name: 'Dirt',  value: '@', id: 'dirt-000' },
-	{ name: 'Grass', value: '"', id: 'grass-000' },
-	{ name: 'Wood',  value: '&', id: 'wood-000' },
-	{ name: 'Tree',  value: '%', id: 'tree-000' },
+	{ name: 'Wall',  value: '#', variants: [
+		['stone-000',       100],
+		['stone-001',       10],
+		['stone-002',       10],
+		['stone-003',       10],
+	] },
+	{ name: 'Path',  value: '.', variants: [
+		['cobblestone-000', 100],
+		['cobblestone-001', 10],
+		['cobblestone-002', 10],
+	] },
+	{ name: 'Water', value: 'w', variants: [['water-000',       100]] },
+	{ name: 'Dirt',  value: '@', variants: [
+		['dirt-000',        100],
+		['dirt-001',        100],
+		['dirt-002',        10],
+	] },
+	{ name: 'Grass', value: '"', variants: [
+		['grass-001',       100],
+		['grass-000',       20],
+	] },
+	{ name: 'Wood',  value: '&', variants: [['wood-000',        100]] },
+	{ name: 'Tree',  value: '%', variants: [['tree-000',        100]] },
 ];
 
 export const TILE_MAP = {};

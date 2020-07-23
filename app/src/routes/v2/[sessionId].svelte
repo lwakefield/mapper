@@ -35,6 +35,7 @@
     import SocketIO from 'socket.io-client';
 
     import Cell from '../../components/Cell.svelte';
+    import Map from '../../components/Map.svelte';
 
     import * as Util from '../../util.js';
     import * as Tools from '../../tools.js';
@@ -244,13 +245,15 @@
                     </clipPath>
 
                     {#each TILE_TYPES as tile}
-                        <pattern id={tile.id} width=1 height=1 patternUnits="userSpaceOnUse" >
-                            <image
-                                width=1 height=1
-                                href="tiles/{tile.id}.png"
-                                style="image-rendering: -moz-crisp-edges; image-rendering: pixelated;"
-                            />
-                        </pattern>
+                        {#each tile.variants as [id, _]}
+                            <pattern id={id} width=1 height=1 patternUnits="userSpaceOnUse" >
+                                <image
+                                    width=1 height=1
+                                    href="tiles/{id}.png"
+                                    style="image-rendering: -moz-crisp-edges; image-rendering: pixelated;"
+                                />
+                            </pattern>
+                        {/each}
                     {/each}
                 </defs>
 
@@ -266,13 +269,12 @@
 
 
                 <g mask={displayOptions.mask ? 'url(#fogOfWar)' : ''}>
-                    {#each Util.mapGridStr(map.grid, (val, x, y) => ({ val, x, y })) as { val, x, y }}
-                        <Cell x={x} y={y} val={val} />
-                    {/each}
+
+                    <Map grid={map.grid} />
 
                     {#if tool.temp }
                         {#each tool.temp as {x, y}}
-                            <Cell x={x} y={y} />
+                            <Cell x={x} y={y} fill="purple" stroke="#eee" />
                         {/each}
                     {/if}
 
