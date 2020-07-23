@@ -23,11 +23,14 @@
     import Map from '../../components/Map.svelte';
     import Tokens from '../../components/Map/Tokens.svelte';
     import FOW from '../../components/Map/FOW.svelte';
+    import * as Tools from '../../tools.js';
 
     export let page;
 
     let session, maps;
     let map;
+    let gmTokens = [];
+    let playerTokens = [];
     let zoom = 1;
 
     if (process.browser) {
@@ -37,8 +40,36 @@
 
             if (session && maps[session.activeMapId]) {
                 map = maps[session.activeMapId];
+                playerTokens = Object.values(map.tokens)
+                    .filter(v => v.layer === 'player');
+                gmTokens = Object.values(map.tokens)
+                    .filter(v => v.layer === 'gm');
             }
         });
+    }
+
+    let draggingToken = null;
+    async function handleTokenMouseDown (ev, tok) {
+        if (ev.button !== 0) return;
+        if (tok.layer !== 'player') return;
+
+        ev.stopPropagation();
+
+        draggingToken = tok;
+
+        const update = ({ dx, dy }) => {
+            draggingToken.x += dx;
+            draggingToken.y += dy;
+        };
+        const commit = async ({ dx, dy }) => {
+            draggingToken.x += dx;
+            draggingToken.y += dy;
+
+            await Game.updateActiveMap({ tokens: { [draggingToken.id]: draggingToken } });
+
+            draggingToken = null;
+        }
+        Tools.movetool(ev, update, commit);
     }
 </script>
 
@@ -47,10 +78,18 @@
         <div class="tabletop">
             <Map grid={map.grid} zoom={zoom}>
                 <g slot="fogOfWar">
-                <FOW mask={map.mask} fill="#000" />
+                    <FOW mask={map.mask} fill="#000" />
                 </g>
 
-                <Tokens tokens={Object.values(map.tokens)} />
+                <Tokens
+                    tokens={playerTokens}
+                    onmousedown={handleTokenMouseDown}
+                    style="cursor: move"
+                />
+                <Tokens tokens={gmTokens} />
+                {#if draggingToken}
+                    <Tokens tokens={[draggingToken]} />
+                {/if}
             </Map>
         </div>
         <div class="sidebar">

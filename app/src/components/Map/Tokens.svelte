@@ -12,7 +12,7 @@
             height="auto"
             href={token.url}
             clip-path="url(#clip-avatar)"
-            on:mousedown={e => onmousedown(e, token.id, token)}
+            on:mousedown={e => onmousedown(e, token)}
             {...$$restProps}
         />
     {/if}

@@ -49,6 +49,7 @@
     let mode = 'map';
     let zoom = 1.0;
     let selectedToken = null;
+    let draggingToken = null;
     let tool = { type: 'pen', mode: 'draw', mat: '#', temp: null };
     let mods = { shift: false };
     let displayOptions = {
@@ -131,6 +132,8 @@
     }
 
     async function handleGridToolMouseDown (ev) {
+        if (draggingToken) return;
+
         if (['map', 'mask'].includes(mode)) {
             return handleMapMaskToolMouseDown(ev);
         } else if (mode === 'tokens') {
@@ -142,14 +145,15 @@
         }
     }
 
-    async function handleTokenMouseDown (ev, tokenId) {
+    async function handleTokenMouseDown (ev, tok) {
         if (ev.button !== 0) return;
+
+        ev.stopPropagation();
 
         if (mode !== 'token') mode = 'tokens';
 
-        selectedToken = map.tokens[tokenId];
+        selectedToken = map.tokens[tok.id];
 
-        ev.stopPropagation();
 
         if (ev.shiftKey) {
             /* socket.emit('update:map', { */
@@ -157,26 +161,25 @@
             /* }, (res) => {}); */
         } else {
             if (ev.altKey) {
-                const token = JSON.parse(JSON.stringify(map.tokens[tokenId]));
+                const token = JSON.parse(JSON.stringify(tok));
                 token.id = uuid.v4();
-                tokenId = token.id;
-                map.tokens[tokenId] = token;
+                map.tokens[token.id] = token;
+                selectedToken = token;
                 map = { ...map };
             }
 
+            draggingToken = selectedToken;
+
             const update = ({ dx, dy }) => {
-                const token = map.tokens[tokenId];
-                token.x += dx;
-                token.y += dy;
-                map = { ...map };
+                draggingToken.x += dx;
+                draggingToken.y += dy;
             };
             const commit = async ({ dx, dy }) => {
-                const token = map.tokens[tokenId];
-                token.x += dx;
-                token.y += dy;
-                map = { ...map };
+                draggingToken.x += dx;
+                draggingToken.y += dy;
 
-                await Game.updateActiveMap({ tokens: { [token.id]: token } });
+                await Game.updateActiveMap({ tokens: { [draggingToken.id]: draggingToken } });
+                draggingToken = null;
             }
             Tools.movetool(ev, update, commit);
         }
@@ -241,6 +244,10 @@
                             || 'move'
                         }`}
                     />
+                {/if}
+
+                {#if draggingToken}
+                    <Tokens tokens={[draggingToken]} />
                 {/if}
 
             </Map>
