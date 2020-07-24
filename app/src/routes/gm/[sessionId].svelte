@@ -33,6 +33,7 @@
     import FOW from '../../components/Map/FOW.svelte';
     import Tokens from '../../components/Map/Tokens.svelte';
     import Chat from '../../components/Chat.svelte';
+    import Upload from '../../components/Upload.svelte';
 
     import * as Game from '../../stores/game.js';
 
@@ -208,6 +209,17 @@
         await Game.insertMap(newMap);
         await Game.updateSession({ activeMapId: newMap.id });
     }
+
+    async function addToken (ev) {
+        const token = {
+            id: uuid.v4(),
+            name: '',
+            url: ev.detail.url,
+        }
+        await Game.updateSession({
+            tokenLibrary: { [token.id]: token },
+        });
+    }
 </script>
 
 {#if map}
@@ -309,6 +321,25 @@
                         <span>Mtl.:&nbsp;</span>
                         {#each TILE_TYPES as tile }
                             <button style={tool.mat === tile.value && 'background: #ddd'} on:click={() => tool.mat = tile.value}>{tile.name}</button>&nbsp;
+                        {/each}
+                    </div>
+                {/if}
+
+                {#if mode === 'tokens'}
+                    <div>
+                        <div>
+                            <Upload on:upload={addToken}>
+                                Add Tokens
+                            </Upload>
+                        </div>
+
+                        {#each Object.values(session.tokenLibrary) as token}
+                            <img
+                                width="40"
+                                height="40"
+                                style="object-fit: cover"
+                                src={token.url}
+                            />
                         {/each}
                     </div>
                 {/if}

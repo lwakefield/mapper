@@ -1,5 +1,6 @@
 import * as uuid from 'uuid';
 import * as crypto from 'crypto';
+import fetch from 'node-fetch';
 
 export function sign ({ verb, md5, type, date, resource }) {
     const toSign = `${verb}\n${md5}\n${type}\n${date}\n${resource}`;
@@ -13,19 +14,20 @@ export async function post (req, res, next) {
     const id = uuid.v4();
 
     const { f } = req.files;
-    const [ bucket ] = process.env.S3_USER_ASSETS.match(/(?<=https?:\/\/)([^.]+)/);
+    const bucket = process.env.S3_USER_ASSETS_BUCKET
 
-    const date = (new Date()).toISOString();
+    const date = (new Date()).toUTCString();
     const s3Res = await fetch(
-        `${process.env.S3_USER_ASSETS}/${id}`,
+        `${process.env.S3_USER_ASSETS_ENDPOINT}/${id}`,
         {
             method: 'PUT',
             headers: {
                 'content-type': f.mimetype,
-                'content-md5': f.md5,
+                // 'content-md5': f.md5,
+                date,
                 authorization: `AWS ${process.env.S3_USER_ASSETS_ACCESS_KEY}:${sign({
                     verb: 'PUT',
-                    md5: f.md5,
+                    md5: '',
                     type: f.mimetype,
                     date,
                     resource: `/${bucket}/${id}`
@@ -38,10 +40,11 @@ export async function post (req, res, next) {
 
     if (s3Res.ok) {
         res.end(JSON.stringify({
-            url: `${process.env.S3_USER_ASSETS}/${id}`,
+            url: `${process.env.S3_USER_ASSETS_ENDPOINT}/${id}`,
         }));
     } else {
-        res.sendStatus(500);
+        res.writeHead(500);
+        res.end();
     }
 }
 

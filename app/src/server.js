@@ -18,7 +18,7 @@ polka({ server }) // You can also use Express
 	.use(
 		compression({ threshold: 0 }),
 		upload({
-			limits: { fileSize: 1 * 1024 * 1024 }, // 1MB
+			limits: { fileSize: 10 * 1024 * 1024 }, // 1MB
 		}),
 		sirv('static', { dev }),
 		sapper.middleware()
