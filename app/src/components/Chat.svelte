@@ -61,8 +61,9 @@
         <div class="anchor">&nbsp;</div>
     </div>
     <div>
-        <label>From:&nbsp;
-            <input type="text" bind:value={from} />
+        <label class="row">
+            From:&nbsp;
+            <input type="text" bind:value={from} class="grow" />
         </label>
         <textarea
             style="width: 100%;"
