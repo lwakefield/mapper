@@ -5,6 +5,7 @@ import polka from 'polka';
 import compression from 'compression';
 import * as sapper from '@sapper/server';
 import * as SocketIO from 'socket.io';
+import upload from 'express-fileupload';
 
 import { ws } from './ws.js';
 
@@ -16,6 +17,9 @@ const server = http.createServer();
 polka({ server }) // You can also use Express
 	.use(
 		compression({ threshold: 0 }),
+		upload({
+			limits: { fileSize: 1 * 1024 * 1024 }, // 1MB
+		}),
 		sirv('static', { dev }),
 		sapper.middleware()
 	)

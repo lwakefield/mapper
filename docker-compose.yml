@@ -7,6 +7,17 @@ services:
       - 8080:8080
       - 28015:28015
 
+  s3:
+    image: minio/minio
+    command: server /data
+    ports:
+      - 9000:9000
+    volumes:
+      - ./minio-data:/data
+    environment:
+      - MINIO_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
+      - MINIO_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+
   app:
     image: node:13-alpine
     command: yarn dev
@@ -16,6 +27,8 @@ services:
     environment:
       - RETHINK_HOST=rethinkdb
       - RETHINK_PORT=28015
+      - S3_USER_ASSETS_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
+      - S3_USER_ASSETS_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
     ports:
       - 3000:3000
       - 10000:10000
