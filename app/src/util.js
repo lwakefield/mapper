@@ -111,3 +111,30 @@ export function mkrand (_a=0x9E3779B9, _b=0x243F6A88, _c=0xB7E15162, _d=0) {
         return (t >>> 0) / 4294967296;
     }
 }
+
+export function roll (str) {
+    const rolls = str.split('+')
+        .map(v => v.trim())
+        .filter(Boolean)
+        .map(v => {
+            let [ num, sides ] = v.split('d');
+            if (num === '') num = 1; // d6 instead of 1d6
+            if (sides === undefined) sides = 1; // a constant
+            return { num: Number(num), sides: Number(sides) };
+        });
+
+    const results = [];
+    for (const roll of rolls) {
+        if (roll.sides === 1) {
+            results.push(roll.num);
+        } else {
+            for (let i = 0; i < roll.num; i++) {
+                results.push(randInt(1, roll.sides));
+            }
+        }
+    }
+
+    const total = results.reduce((a, c) => a + c, 0);
+
+    return { results, total };
+}

@@ -32,11 +32,12 @@ export function makeToken (layer) {
     }
 }
 
-export function makeMessage (sessionId, from, message) {
+export function makeMessage (sessionId, { from, to = 'all', message }) {
     return {
         id: uuid(),
         sessionId,
         from,
+        to,
         message,
     }
 }

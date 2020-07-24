@@ -14,6 +14,9 @@
 <script>
     import * as Game from '../stores/game.js';
     import { makeMessage } from '../factory.js';
+    import { roll } from '../util.js';
+
+    export let filter = () => true;
 
     let session, messages = [];
     let from = 'anon';
@@ -29,20 +32,31 @@
 
         e.preventDefault();
 
-        const { value } = e.target;
+        let message = e.target.value;
+        let to = 'all';
 
-        await Game.insertMessage(makeMessage(session.id, from, value));
+        if (message.match(/^\/(gm?)?r(oll)? /)) {
+            if (message.startsWith('/g')) to = 'gm';
+
+            const v = message.replace(/^\/(gm?)?r(oll)? /, '');
+            const { results, total } = roll(v);
+            message = `rolled (${v.trim()}) to ${to} ${results.join(' + ')} = ${total}`;
+        }
+
+        await Game.insertMessage(makeMessage(session.id, { from, to, message }));
 
         e.target.value = '';
     }
 </script>
 
-<div class="col hide-overflow">
-    <div class="messages col">
+<div class="col hide-overflow {$$props.class}">
+    <div class="messages col grow">
         {#each messages as message}
-            <div>
-                <span>{message.from}</span> - <span>{message.message}</span>
-            </div>
+            {#if filter(message)}
+                <div>
+                    <span>{message.from}</span> - <span>{message.message}</span>
+                </div>
+            {/if}
         {/each}
         <div class="anchor">&nbsp;</div>
     </div>

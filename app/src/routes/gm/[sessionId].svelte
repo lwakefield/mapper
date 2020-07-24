@@ -363,9 +363,9 @@
 
             </fieldset>
 
-            <fieldset class="col hide-overflow">
+            <fieldset class="col hide-overflow grow">
                 <legend>Chat</legend>
-                <Chat />
+                <Chat class="grow" />
             </fieldset>
         </div>
     </div>
