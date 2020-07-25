@@ -7,5 +7,6 @@ RUN yarn
 COPY . /app/
 
 ENV NODE_ENV=production
+RUN yarn build
 
 CMD node __sapper__/build

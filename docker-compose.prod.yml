@@ -22,14 +22,12 @@ services:
     env_file: s3.env.prod
     volumes:
       - /data/dnd/s3:/data
-    ports:
-      - 9000:9000
     networks:
       - s3
 
   dnd-imageproxy:
     image: willnorris/imageproxy
-    command: -addr 0.0.0.0:8081 -cache memory -cache /tmp/imageproxy -allowHosts s3
+    command: -addr 0.0.0.0:8081 -cache memory -cache /tmp/imageproxy -baseURL http://s3:9000
     networks:
       - inlets_inlets
       - s3
