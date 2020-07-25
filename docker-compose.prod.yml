@@ -9,14 +9,17 @@ services:
   s3:
     image: minio/minio
     command: server /data
+    env_file: s3.env.prod
     volumes:
       - /data/dnd/s3:/data
 
-  imageproxy:
+  dnd-imageproxy:
     image: willnorris/imageproxy
     command: -addr 0.0.0.0:8081 -cache memory -cache /tmp/imageproxy -allowHosts s3
 
-  app:
+  dnd-app:
     image: dnd:latest
     command: yarn dev
     env_file: app.env.prod
+    ports:
+      - 3000:3000
