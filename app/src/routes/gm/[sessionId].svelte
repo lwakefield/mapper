@@ -42,7 +42,7 @@
     import * as Tools from '../../tools.js';
     import { makeMap, makeToken } from '../../factory.js';
     import { TILE_TYPES } from '../../tiles.js';
-    import { getImageProxyHost } from '../../config.js';
+    import { getImageURL } from '../../util.js';
 
     export let page;
 
@@ -340,7 +340,7 @@
 
                 {#if mode === 'tokens' && selectedToken}
                     <Collapsible title="Selected Token">
-                        <img src="{getImageProxyHost()}/200/{selectedToken.url}" style="width: 100%" />
+                        <img src={getImageURL(selectedToken.url, 200)} style="width: 100%" />
                         <label>
                             URL:&nbsp;<input type="text" disabled bind:value={selectedToken.url} />
                         </label>

@@ -20,7 +20,7 @@
 
     import * as Game from '../stores/game.js';
     import Upload from './Upload.svelte';
-    import { getImageProxyHost } from '../config.js';
+    import { getImageURL } from '../util.js';
 
 
     let session;
@@ -68,7 +68,7 @@
                     <img
                         width="40"
                         height="40"
-                        src="{getImageProxyHost()}/100/{token.url}"
+                        src={getImageURL(token.url, 100)}
                         draggable=true
                         on:dragstart={handleTokenDragStart.bind(token)}
                         />&nbsp;
