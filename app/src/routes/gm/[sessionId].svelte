@@ -9,6 +9,7 @@
     .sidebar {
         width: 350px;
         padding: 10px;
+        overflow-y: scroll;
     }
     .selected {
         background: #ddd;
@@ -276,7 +277,7 @@
 
         <div class="sidebar col">
             <Collapsible title="Map">
-                <div style="max-height: 200px; width: 100%; overflow: scroll;">
+                <div class="vspace" style="max-height: 200px; width: 100%; overflow-y: scroll;">
                     {#each Object.entries(maps || {}) as [ id, m ]}
                         <div class:selected={session.activeMapId === id} style="display: flex; justify-content: space-between;">
                             <div
@@ -287,14 +288,20 @@
                             <button on:click={e => handleCloneMap(m)}>Clone</button>
                         </div>
                     {/each}
-                    <div>
-                        <button on:click={handleNewMap}>New Map</button>
-                    </div>
 
                 </div>
 
-                <label class="row">
-                    Map Name:&nbsp;<input type="text" value={map.name} on:blur={e => Game.updateActiveMap({ name: e.target.value })} />
+                <div class="vspace">
+                    <button on:click={handleNewMap}>New Map</button>
+                </div>
+
+                <label>
+                    Map Name:
+                    <input
+                        type="text"
+                        value={map.name}
+                        on:blur={e => Game.updateActiveMap({ name: e.target.value })}
+                    />
                 </label>
             </Collapsible>
 
@@ -326,36 +333,49 @@
                 {/if}
 
                 {#if mode === 'tokens'}
-                    <fieldset>
-                        <legend>Token Library</legend>
-
+                    <Collapsible title="Token Library">
                         <TokenLibrary />
-                    </fieldset>
+                    </Collapsible>
                 {/if}
 
                 {#if mode === 'tokens' && selectedToken}
-                    <div>
-                        <img src={selectedToken.url} width="100" />
-                        <label class="row">
-                            URL:&nbsp;<input type="text" bind:value={selectedToken.url} />
+                    <Collapsible title="Selected Token">
+                        <img src="{process.env.IMAGE_PROXY_HOST}/200/{selectedToken.url}" style="width: 100%" />
+                        <label>
+                            URL:&nbsp;<input type="text" disabled bind:value={selectedToken.url} />
                         </label>
-                        <label class="row">
+                        <label>
                             Layer:
                             <select bind:value={selectedToken.layer} on:blur={handleSyncActiveToken}>
                                 <option value="gm">GM</option>
                                 <option value="player">Player</option>
                             </select>
                         </label>
-                        <label class="row">
-                            Scale:&nbsp;<input type="number" bind:value={selectedToken.scale} on:change={handleSyncActiveToken} />
+                        <label>
+                            Scale:&nbsp;
+                            <input
+                                type="number" step="any"
+                                bind:value={selectedToken.scale}
+                                on:change={handleSyncActiveToken}
+                            />
                         </label>
-                        <label class="row">
-                            X:&nbsp;<input type="number" bind:value={selectedToken.x} on:change={handleSyncActiveToken} />
+                        <label>
+                            X:&nbsp;
+                            <input
+                                type="number" step="any"
+                                bind:value={selectedToken.x}
+                                on:change={handleSyncActiveToken}
+                            />
                         </label>
-                        <label class="row">
-                            Y:&nbsp;<input type="number" bind:value={selectedToken.y} on:change={handleSyncActiveToken} />
+                        <label>
+                            Y:&nbsp;
+                            <input
+                                type="number" step="any"
+                                bind:value={selectedToken.y}
+                                on:change={handleSyncActiveToken}
+                            />
                         </label>
-                    </div>
+                    </Collapsible>
                 {/if}
             </Collapsible>
 
@@ -371,7 +391,6 @@
                     <button on:click={() => zoom /= 1.2}>Zoom Out</button>
                 </div>
                 <div class="row vspace">
-                    Player Link:
                     <input
                         type="text"
                         readonly
@@ -381,7 +400,7 @@
 
             </Collapsible>
 
-            <Collapsible title="Chat" class="col hide-overflow grow">
+            <Collapsible title="Chat" class="col">
                 <Chat class="grow" />
             </Collapsible>
         </div>

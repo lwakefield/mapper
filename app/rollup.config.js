@@ -21,7 +21,8 @@ export default {
 		plugins: [
 			replace({
 				'process.browser': true,
-				'process.env.NODE_ENV': JSON.stringify(mode)
+				'process.env.NODE_ENV': JSON.stringify(mode),
+				'process.env.IMAGE_PROXY_HOST': JSON.stringify(process.env.IMAGE_PROXY_HOST),
 			}),
 			svelte({
 				dev,
@@ -67,7 +68,8 @@ export default {
 		plugins: [
 			replace({
 				'process.browser': false,
-				'process.env.NODE_ENV': JSON.stringify(mode)
+				'process.env.NODE_ENV': JSON.stringify(mode),
+				'process.env.IMAGE_PROXY_HOST': JSON.stringify(process.env.IMAGE_PROXY_HOST),
 			}),
 			svelte({
 				generate: 'ssr',
@@ -94,7 +96,8 @@ export default {
 			resolve(),
 			replace({
 				'process.browser': true,
-				'process.env.NODE_ENV': JSON.stringify(mode)
+				'process.env.NODE_ENV': JSON.stringify(mode),
+				'process.env.IMAGE_PROXY_HOST': JSON.stringify(process.env.IMAGE_PROXY_HOST),
 			}),
 			commonjs(),
 			!dev && terser()

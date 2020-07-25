@@ -1,0 +1,12 @@
+http://s3:9000 {
+        reverse_proxy * s3:9000
+}
+http://localhost:3000 {
+        reverse_proxy * app:3000
+}
+http://localhost:10000 {
+        reverse_proxy * app:10000
+}
+http://imgproxy:8081 {
+        reverse_proxy * imageproxy:8081
+}

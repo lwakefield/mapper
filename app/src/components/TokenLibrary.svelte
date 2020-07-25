@@ -2,8 +2,11 @@
     img {
         object-fit: cover;
     }
+    .tokenName {
+        width: 100%;
+    }
     .tokenName:not(:hover):not(:active):not(:focus) {
-        border: none;
+        border-color: transparent;
     }
     .tokenList {
         overflow-y: scroll;
@@ -50,16 +53,17 @@
         placeholder="Search..."
         bind:value={searchNeedle}
         class="vspace"
+        style="width: 100%"
     />
 
-    <div class="tokenList">
+    <div class="tokenList vspace">
         {#each Object.values(session.tokenLibrary || {}) as token}
             {#if token.name.toLowerCase().includes(searchNeedle.toLowerCase().trim())}
                 <div class="row">
                     <img
                         width="40"
                         height="40"
-                        src={token.url}
+                        src="{process.env.IMAGE_PROXY_HOST}/100/{token.url}"
                         draggable=true
                         on:dragstart={handleTokenDragStart.bind(token)}
                         />&nbsp;
@@ -69,13 +73,13 @@
                             value={token.name}
                             placeholder="Token Name"
                             on:change={handleTokenNameChange.bind(token)}
-                            />
+                        />
                 </div>
             {/if}
         {/each}
     </div>
 
-    <div>
+    <div class="vspace">
         <Upload on:upload={handleAddToken}>
             Add Tokens
         </Upload>

@@ -1,6 +1,7 @@
 <style>
     .messages {
         overflow-y: scroll;
+        min-height: 300px;
     }
     .messages * {
         overflow-anchor: none;

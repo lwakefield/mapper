@@ -10,13 +10,17 @@ services:
   s3:
     image: minio/minio
     command: server /data
-    ports:
-      - 9000:9000
+    # ports:
+    #   - 9000:9000
     volumes:
       - ./minio-data:/data
     environment:
       - MINIO_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
       - MINIO_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+
+  imageproxy:
+    image: willnorris/imageproxy
+    command: -addr 0.0.0.0:8081 -cache memory -cache /tmp/imageproxy -allowHosts s3
 
   app:
     image: node:13-alpine
@@ -31,6 +35,14 @@ services:
       - S3_USER_ASSETS_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
       - S3_USER_ASSETS_BUCKET=user-assets
       - S3_USER_ASSETS_ENDPOINT=http://s3:9000/user-assets
+      - IMAGE_PROXY_HOST=http://imgproxy:8081
+
+  reverse-proxy:
+    image: caddy:2-alpine
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
     ports:
       - 3000:3000
+      - 8081:8081
       - 10000:10000
+      - 9000:9000

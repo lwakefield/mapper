@@ -1,7 +1,6 @@
 html, body, #sapper {
 	height: 100vh;
 	overflow: hidden;
-	/* height: 100%; */
 	font-size: 12px;
 }
 
@@ -35,6 +34,11 @@ code {
 	border-radius: 2px;
 }
 
+label {
+	display: flex;
+	flex-flow: column;
+}
+
 button {
 	background: white;
 	border: 1px solid #333;
@@ -61,6 +65,11 @@ button:hover {
 	display: flex;
 	flex-flow: row;
 	align-items: center;
+}
+.row-ends {
+	display: flex;
+	flex-flow: row;
+	justify-content: space-between;
 }
 .col {
 	display: flex;
