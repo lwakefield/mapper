@@ -20,7 +20,7 @@
 
     import * as Game from '../stores/game.js';
     import Upload from './Upload.svelte';
-    import { getImageProxyHost } from '../config.js';
+    import { getImageURL } from '../util.js';
 
 
     let session;
