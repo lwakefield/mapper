@@ -57,6 +57,11 @@ button:hover {
 	display: flex;
 	flex-flow: row;
 }
+.row-centered {
+	display: flex;
+	flex-flow: row;
+	align-items: center;
+}
 .col {
 	display: flex;
 	flex-flow: column;

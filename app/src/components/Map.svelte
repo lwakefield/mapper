@@ -44,7 +44,9 @@
     width={`${100 * zoom}%`}
     viewBox={`0 0 ${rows[0].length} ${rows.length}`}
     shape-rendering="crispEdges"
-    on:mousedown={onmousedown}
+    on:mousedown
+    on:drop
+    on:dragover
 >
     <rect x=0 y=0 width="100%" height="100%" fill="#333" />
 

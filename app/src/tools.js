@@ -9,6 +9,10 @@ export function toSVGPoint (ev) {
     return { x: svgPoint.x, y: svgPoint.y };
 }
 
+export function toQuantizedSVGPoint (ev) {
+    return quantizeSVGPoint(toSVGPoint(ev));
+}
+
 export function quantizeSVGPoint (point) {
     return { x: Util.quantize(point.x, 1), y: Util.quantize(point.y, 1) };
 }

@@ -33,7 +33,8 @@
     import FOW from '../../components/Map/FOW.svelte';
     import Tokens from '../../components/Map/Tokens.svelte';
     import Chat from '../../components/Chat.svelte';
-    import Upload from '../../components/Upload.svelte';
+    import TokenLibrary from '../../components/TokenLibrary.svelte';
+    import Collapsible from '../../components/Collapsible.svelte';
 
     import * as Game from '../../stores/game.js';
 
@@ -143,12 +144,6 @@
 
         if (['map', 'mask'].includes(mode)) {
             return handleMapMaskToolMouseDown(ev);
-        } else if (mode === 'tokens') {
-            if (ev.button !== 0) return;
-
-            const token = { ...makeToken('gm'), ...Tools.toSVGPoint(ev) };
-
-            await Game.updateActiveMap({ tokens: { [token.id]: token } });
         }
     }
 
@@ -210,15 +205,21 @@
         await Game.updateSession({ activeMapId: newMap.id });
     }
 
-    async function addToken (ev) {
+    async function handleAddTokenToMap (ev) {
+        ev.preventDefault();
         const token = {
-            id: uuid.v4(),
-            name: '',
-            url: ev.detail.url,
+            ...makeToken('gm'),
+            ...Tools.toQuantizedSVGPoint(ev),
+            url: ev.dataTransfer.getData('tokenURL')
+        };
+        await Game.updateActiveMap({ tokens: { [token.id]: token } });
+    }
+
+    function handleMapDragOver (ev) {
+        if (ev.dataTransfer.getData('tokenURL')) {
+            ev.preventDefault();
+            ev.dataTransfer.dropEffect = 'copy';
         }
-        await Game.updateSession({
-            tokenLibrary: { [token.id]: token },
-        });
     }
 </script>
 
@@ -227,7 +228,9 @@
         <div class="tabletop">
             <Map
                 grid={map.grid} zoom={zoom}
-                onmousedown={e => handleGridToolMouseDown(e)}
+                on:mousedown={handleGridToolMouseDown}
+                on:drop={handleAddTokenToMap}
+                on:dragover={handleMapDragOver}
             >
                 <g slot="fogOfWar">
                     <FOW
@@ -272,9 +275,7 @@
         </div>
 
         <div class="sidebar col">
-            <fieldset>
-                <legend>Map</legend>
-
+            <Collapsible title="Map">
                 <div style="max-height: 200px; width: 100%; overflow: scroll;">
                     {#each Object.entries(maps || {}) as [ id, m ]}
                         <div class:selected={session.activeMapId === id} style="display: flex; justify-content: space-between;">
@@ -295,10 +296,9 @@
                 <label class="row">
                     Map Name:&nbsp;<input type="text" value={map.name} on:blur={e => Game.updateActiveMap({ name: e.target.value })} />
                 </label>
-            </fieldset>
+            </Collapsible>
 
-            <fieldset>
-                <legend>Tool:</legend>
+            <Collapsible title="Tool">
                 <div class="vspace">
                     <span>Mode:&nbsp;</span>
                     <button style={mode === 'map' && 'background: #ddd'}    on:click={() => mode = 'map'}>Map</button>
@@ -326,22 +326,11 @@
                 {/if}
 
                 {#if mode === 'tokens'}
-                    <div>
-                        <div>
-                            <Upload on:upload={addToken}>
-                                Add Tokens
-                            </Upload>
-                        </div>
+                    <fieldset>
+                        <legend>Token Library</legend>
 
-                        {#each Object.values(session.tokenLibrary) as token}
-                            <img
-                                width="40"
-                                height="40"
-                                style="object-fit: cover"
-                                src={token.url}
-                            />
-                        {/each}
-                    </div>
+                        <TokenLibrary />
+                    </fieldset>
                 {/if}
 
                 {#if mode === 'tokens' && selectedToken}
@@ -368,11 +357,9 @@
                         </label>
                     </div>
                 {/if}
-            </fieldset>
+            </Collapsible>
 
-            <fieldset>
-                <legend>Display</legend>
-
+            <Collapsible title="Display">
                 <div class="vspace">
                     <button class:selected={displayOptions.mask} on:click={() => displayOptions.mask = !displayOptions.mask}>Mask</button>
                     <button class:selected={displayOptions.gmTokens} on:click={() => displayOptions.gmTokens = !displayOptions.gmTokens}>GM Tokens</button>
@@ -392,12 +379,11 @@
                     />
                 </div>
 
-            </fieldset>
+            </Collapsible>
 
-            <fieldset class="col hide-overflow grow">
-                <legend>Chat</legend>
+            <Collapsible title="Chat" class="col hide-overflow grow">
                 <Chat class="grow" />
-            </fieldset>
+            </Collapsible>
         </div>
     </div>
 {/if}

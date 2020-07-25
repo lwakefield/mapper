@@ -61,7 +61,7 @@
         <div class="anchor">&nbsp;</div>
     </div>
     <div>
-        <label class="row">
+        <label class="row-centered">
             From:&nbsp;
             <input type="text" bind:value={from} class="grow" />
         </label>
