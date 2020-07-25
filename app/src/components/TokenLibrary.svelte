@@ -16,9 +16,12 @@
 
 <script>
     import * as uuid from 'uuid';
+    import { stores } from '@sapper/app';
 
     import * as Game from '../stores/game.js';
     import Upload from './Upload.svelte';
+    import { getImageProxyHost } from '../config.js';
+
 
     let session;
     let searchNeedle = '';
@@ -65,7 +68,7 @@
                     <img
                         width="40"
                         height="40"
-                        src="{process.env.IMAGE_PROXY_HOST}/100/{token.url}"
+                        src="{getImageProxyHost()}/100/{token.url}"
                         draggable=true
                         on:dragstart={handleTokenDragStart.bind(token)}
                         />&nbsp;

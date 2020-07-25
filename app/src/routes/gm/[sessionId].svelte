@@ -26,7 +26,6 @@
 </script>
 
 <script>
-    import { stores } from '@sapper/app';
     import * as uuid from 'uuid';
 
     import Cell from '../../components/Cell.svelte';
@@ -43,6 +42,7 @@
     import * as Tools from '../../tools.js';
     import { makeMap, makeToken } from '../../factory.js';
     import { TILE_TYPES } from '../../tiles.js';
+    import { getImageProxyHost } from '../../config.js';
 
     export let page;
 
@@ -340,7 +340,7 @@
 
                 {#if mode === 'tokens' && selectedToken}
                     <Collapsible title="Selected Token">
-                        <img src="{process.env.IMAGE_PROXY_HOST}/200/{selectedToken.url}" style="width: 100%" />
+                        <img src="{getImageProxyHost()}/200/{selectedToken.url}" style="width: 100%" />
                         <label>
                             URL:&nbsp;<input type="text" disabled bind:value={selectedToken.url} />
                         </label>
