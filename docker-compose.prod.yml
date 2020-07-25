@@ -1,0 +1,22 @@
+version: "3.8"
+services:
+
+  rethinkdb:
+    image: rethinkdb
+    volumes:
+      - /data/dnd/rethinkdb:/data
+
+  s3:
+    image: minio/minio
+    command: server /data
+    volumes:
+      - /data/dnd/s3:/data
+
+  imageproxy:
+    image: willnorris/imageproxy
+    command: -addr 0.0.0.0:8081 -cache memory -cache /tmp/imageproxy -allowHosts s3
+
+  app:
+    image: dnd:latest
+    command: yarn dev
+    env_file: app.env.prod

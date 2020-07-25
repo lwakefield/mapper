@@ -5,13 +5,10 @@ services:
     image: rethinkdb
     ports:
       - 8080:8080
-      - 28015:28015
 
   s3:
     image: minio/minio
     command: server /data
-    # ports:
-    #   - 9000:9000
     volumes:
       - ./minio-data:/data
     environment:
