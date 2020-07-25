@@ -14,6 +14,7 @@
             height="auto"
             href={getImageURL(token.url, 200)}
             clip-path="url(#clip-avatar)"
+            style="image-rendering: crisp-edges; image-rendering: -moz-crisp-edges;"
             on:mousedown={e => onmousedown(e, token)}
             {...$$restProps}
         />
