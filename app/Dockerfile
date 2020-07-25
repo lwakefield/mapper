@@ -7,6 +7,7 @@ RUN yarn
 COPY . /app/
 
 ENV NODE_ENV=production
-RUN yarn build
+# TODO move this to runtime
+RUN IMAGE_PROXY_HOST='https://i.dnd.iamlawrence.me' yarn build
 
 CMD node __sapper__/build
