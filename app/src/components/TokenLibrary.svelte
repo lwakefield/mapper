@@ -68,7 +68,7 @@
                     <img
                         width="40"
                         height="40"
-                        src="{getImageProxyHost()}/100/{token.url}"
+                        src={getImageURL(token.url, 100)}
                         draggable=true
                         on:dragstart={handleTokenDragStart.bind(token)}
                         />&nbsp;

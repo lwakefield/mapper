@@ -1,5 +1,8 @@
 import * as uuid from 'uuid';
 
+import { stores } from '@sapper/app';
+import { get } from 'svelte/store';
+
 export function mapGridStr (s, fn) {
   const rows = s.split('\n');
   const height = rows.length;
@@ -137,4 +140,11 @@ export function roll (str) {
     const total = results.reduce((a, c) => a + c, 0);
 
     return { results, total };
+}
+
+export function getImageURL (url, size) {
+  const { session } = stores();
+  const { IMAGE_PROXY_HOST } = get(session);
+  const u = new URL(url);
+  return `${IMAGE_PROXY_HOST}/${size}${u.pathname}`;
 }

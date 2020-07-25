@@ -1,5 +1,5 @@
 <script>
-    import { getImageProxyHost } from '../../config.js';
+    import { getImageURL } from '../../util.js';
 
     export let tokens;
     export let onmousedown = () => {};
@@ -12,7 +12,7 @@
             x={token.x} y={token.y}
             width={token.scale}
             height="auto"
-            href={getImageProxyHost()}/200/{token.url}
+            href={getImageURL(token.url, 200)}
             clip-path="url(#clip-avatar)"
             on:mousedown={e => onmousedown(e, token)}
             {...$$restProps}

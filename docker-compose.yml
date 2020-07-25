@@ -17,7 +17,7 @@ services:
 
   imageproxy:
     image: willnorris/imageproxy
-    command: -addr 0.0.0.0:8081 -cache memory -cache /tmp/imageproxy -allowHosts s3
+    command: -addr 0.0.0.0:8081 -cache memory -cache /tmp/imageproxy -baseURL http://s3:9000
 
   app:
     image: node:13-alpine
