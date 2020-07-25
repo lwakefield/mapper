@@ -15,6 +15,8 @@
 </style>
 
 <script>
+    import * as uuid from 'uuid';
+
     import * as Game from '../stores/game.js';
     import Upload from './Upload.svelte';
 
