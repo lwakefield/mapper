@@ -1,10 +1,20 @@
 version: "3.8"
-services:
 
+networks:
+  inlets_inlets:
+    external: true
+  db:
+    driver: overlay
+  s3:
+    driver: overlay
+
+services:
   rethinkdb:
     image: rethinkdb
     volumes:
       - /data/dnd/rethinkdb:/data
+    networks:
+      - db
 
   s3:
     image: minio/minio
@@ -12,10 +22,17 @@ services:
     env_file: s3.env.prod
     volumes:
       - /data/dnd/s3:/data
+    ports:
+      - 9000:9000
+    networks:
+      - s3
 
   dnd-imageproxy:
     image: willnorris/imageproxy
     command: -addr 0.0.0.0:8081 -cache memory -cache /tmp/imageproxy -allowHosts s3
+    networks:
+      - inlets_inlets
+      - s3
 
   dnd-app:
     image: dnd:latest
@@ -23,3 +40,7 @@ services:
     env_file: app.env.prod
     ports:
       - 3000:3000
+    networks:
+      - inlets_inlets
+      - db
+      - s3

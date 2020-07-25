@@ -44,6 +44,7 @@ export async function post (req, res, next) {
         }));
     } else {
         res.writeHead(500);
+        console.error(await s3Res.text());
         res.end();
     }
 }
