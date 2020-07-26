@@ -143,6 +143,37 @@
         tool.type === 'line'        && Tools.line(ev, update, commitFn);
         tool.type === 'rect'        && Tools.rect(ev, update, commitFn);
         tool.type === 'filled-rect' && Tools.filledRect(ev, update, commitFn);
+
+        if (tool.type === 'flood-fill') {
+            const start = Tools.quantizeSVGPoint(Tools.toSVGPoint(ev));
+
+            const rows = map.grid.split('\n');
+            const width = rows[0].length;
+            const height = rows.length;
+
+            const matToFill = rows[start.y][start.x];
+            const cells = [];
+            const queue = [ start ];
+            const visited = new Set();
+            visited.add(`${start.x},${start.y}`);
+
+            while (queue.length > 0) {
+                const { x, y } = queue.shift();
+
+                if (rows[y][x] !== matToFill) continue;
+
+                cells.push({ x, y, val: tool.mat });
+
+                if (rows[y]   && rows[y][x-1] !== undefined && !visited.has(`${x-1},${y}`)) { queue.push({ x: x-1, y }); visited.add(`${x-1},${y}`); }
+                if (rows[y]   && rows[y][x+1] !== undefined && !visited.has(`${x+1},${y}`)) { queue.push({ x: x+1, y }); visited.add(`${x+1},${y}`); }
+                if (rows[y-1] && rows[y-1][x] !== undefined && !visited.has(`${x},${y-1}`)) { queue.push({ x, y: y-1 }); visited.add(`${x},${y-1}`); }
+                if (rows[y+1] && rows[y+1][x] !== undefined && !visited.has(`${x},${y+1}`)) { queue.push({ x, y: y+1 }); visited.add(`${x},${y+1}`); }
+            }
+
+            const grid = Util.setCells(map.grid, cells);
+
+            await Game.updateActiveMap({ grid });
+        }
     }
 
     async function handleGridToolMouseDown (ev) {
@@ -335,10 +366,11 @@
                 {#if ['map', 'mask'].includes(mode)}
                     <div class="vspace">
                         <span>Tool:&nbsp;</span>
-                        <button style={tool.type === 'pen' && 'background: #ddd'}         on:click={() => tool.type = 'pen'}>Pen</button>
-                        <button style={tool.type === 'line' && 'background: #ddd'}        on:click={() => tool.type = 'line'}>Line</button>
-                        <button style={tool.type === 'rect' && 'background: #ddd'}        on:click={() => tool.type = 'rect'}>Rect</button>
-                        <button style={tool.type === 'filled-rect' && 'background: #ddd'} on:click={() => tool.type = 'filled-rect'}>F. Rect</button>
+                        <button style={tool.type === 'pen' && 'background: #ddd'}         on:click={() => tool.type = 'pen'}>☡</button>
+                        <button style={tool.type === 'line' && 'background: #ddd'}        on:click={() => tool.type = 'line'}>/</button>
+                        <button style={tool.type === 'rect' && 'background: #ddd'}        on:click={() => tool.type = 'rect'}>□</button>
+                        <button style={tool.type === 'filled-rect' && 'background: #ddd'} on:click={() => tool.type = 'filled-rect'}>■</button>
+                        <button style={tool.type === 'flood-fill' && 'background: #ddd'}  on:click={() => tool.type = 'flood-fill'}>💧</button>
                     </div>
                 {/if}
 

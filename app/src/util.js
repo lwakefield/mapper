@@ -24,11 +24,6 @@ export function replaceCharAt (str, index, val) {
   return str.substring(0, index) + val + str.substring(index + 1);
 }
 
-export function getCell (s, { x, y }) {
-    const rows = s.split('\n');
-	return rows[y][x];
-}
-
 export function setCells (s, cells) {
     const rows = s.split('\n');
     const width = rows[0].length;
@@ -58,18 +53,21 @@ export function line (x0, y0, x1, y1) {
 }
 
 export function filledRect(x0, y0, x1, y1) {
-  const rect = [];
-
   const minx = Math.min(x0, x1);
   const miny = Math.min(y0, y1);
   const maxx = Math.max(x0, x1);
   const maxy = Math.max(y0, y1);
 
-  for (let x = minx; x <= maxx; x++) {
-    for (let y = miny; y <= maxy; y++) {
-      rect.push({ x, y });
-    }
+  const width = maxx - minx + 1;
+  const height = maxy - miny + 1;
+  const rect = new Array(width * height);
+
+  for (let i = 0; i < rect.length; i++) {
+    let x = i % width;
+    let y = Math.floor(i / width)
+    rect[i] = { x: x + minx, y: y + miny };
   }
+
   return rect;
 }
 
