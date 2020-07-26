@@ -1,3 +1,9 @@
+<style>
+    image {
+        image-rendering: crisp-edges;
+        image-rendering: -moz-crisp-edges;
+    }
+</style>
 <script>
     import { getImageURL } from '../../util.js';
 
@@ -11,10 +17,9 @@
         <image
             x={token.x} y={token.y}
             width={token.scale}
-            height="auto"
+            height={token.scale}
             href={getImageURL(token.url, 200)}
             clip-path="url(#clip-avatar)"
-            style="image-rendering: crisp-edges; image-rendering: -moz-crisp-edges;"
             on:mousedown={e => onmousedown(e, token)}
             {...$$restProps}
         />
