@@ -13,6 +13,8 @@ DnDandy is a virtual tabletop for D&D with the following features:
 
 DnDandy was built out of a frustration with Roll20. It is not intended to be a feature-for-feature clone, instead it focuses on the core features (map management, token management and chat), aiming for simplicity, flexibility and speed.
 
+![Screenshot](https://user-images.githubusercontent.com/5688923/88478647-0d729800-cf18-11ea-9333-a0257c56cc85.png)
+
 # Setup
 
 There are still some manual steps to get up and running:
