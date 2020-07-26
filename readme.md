@@ -22,8 +22,8 @@ There are still some manual steps to get up and running:
 1. Install app dependencies - `cd app && yarn`
 2. Start the stack - `docker-compose up`
 3. Setup the s3 bucket:
-3.1. Browse to `localhost:9000`
-3.2. Login with credentials found in `docker-compose.yml`
-3.3. Add the `user-assets` bucket
-3.4. Add a `* read-only` asset for the `user-assets` bucket
+    1. Browse to `localhost:9000`
+    2. Login with credentials found in `docker-compose.yml`
+    3. Add the `user-assets` bucket
+    4. Add a `* read-only` asset for the `user-assets` bucket
 4. Add `127.0.0.1 imgproxy` to your /etc/hosts
