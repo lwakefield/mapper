@@ -19,6 +19,8 @@
 </script>
 
 <script>
+    import { tick } from 'svelte';
+
     import * as Game from '../../stores/game.js';
     import Map from '../../components/Map.svelte';
     import Tokens from '../../components/Map/Tokens.svelte';
@@ -72,12 +74,25 @@
         }
         Tools.movetool(ev, update, commit);
     }
+
+    async function handleMapWheel (ev) {
+        if (ev.ctrlKey) {
+            const target = ev.target.closest('.tabletop');
+            const left = target.scrollLeft / target.scrollLeftMax;
+            const top = target.scrollTop / target.scrollTopMax;
+            ev.preventDefault();
+            zoom += event.deltaY * -0.01;
+            await tick();
+            target.scrollLeft = left * target.scrollLeftMax;
+            target.scrollTop = top * target.scrollTopMax;
+        }
+    }
 </script>
 
 {#if map}
     <div class="row" style="overflow: hidden">
         <div class="tabletop">
-            <Map grid={map.grid} zoom={zoom}>
+            <Map grid={map.grid} zoom={zoom} on:wheel={handleMapWheel}>
                 <g slot="fogOfWar">
                     <FOW mask={map.mask} fill="#000" />
                 </g>

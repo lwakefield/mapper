@@ -27,6 +27,7 @@
 
 <script>
     import * as uuid from 'uuid';
+    import { tick } from 'svelte';
 
     import Cell from '../../components/Cell.svelte';
     import Map from '../../components/Map.svelte';
@@ -222,6 +223,19 @@
             ev.dataTransfer.dropEffect = 'copy';
         }
     }
+
+    async function handleMapWheel (ev) {
+        if (ev.ctrlKey) {
+            const target = ev.target.closest('.tabletop');
+            const left = target.scrollLeft / target.scrollLeftMax;
+            const top = target.scrollTop / target.scrollTopMax;
+            ev.preventDefault();
+            zoom += event.deltaY * -0.01;
+            await tick();
+            target.scrollLeft = left * target.scrollLeftMax;
+            target.scrollTop = top * target.scrollTopMax;
+        }
+    }
 </script>
 
 {#if map}
@@ -232,6 +246,7 @@
                 on:mousedown={handleGridToolMouseDown}
                 on:drop={handleAddTokenToMap}
                 on:dragover={handleMapDragOver}
+                on:wheel={handleMapWheel}
             >
                 <g slot="fogOfWar">
                     <FOW
