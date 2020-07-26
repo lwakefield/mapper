@@ -92,6 +92,15 @@
         document.addEventListener('keydown', e => {
             if (e.shiftKey) mods.shift = true;
             if (e.altKey) mods.alt = true;
+
+            if (e.target.nodeName === 'INPUT' || e.target.nodeName === 'TEXTAREA') return;
+
+            mode = 'map';
+            if (e.key === 'q') tool.type = 'pen';
+            if (e.key === 'w') tool.type = 'line';
+            if (e.key === 'e') tool.type = 'rect';
+            if (e.key === 'r') tool.type = 'filled-rect';
+            if (e.key === 't') tool.type = 'flood-fill';
         });
         document.addEventListener('keyup', e => {
             if (mods.shift && !e.shiftKey) mods.shift = false;
