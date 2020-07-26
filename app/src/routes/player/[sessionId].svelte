@@ -18,6 +18,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>DnDandy - Player View</title>
+</svelte:head>
+
 <script>
     import { tick } from 'svelte';
 

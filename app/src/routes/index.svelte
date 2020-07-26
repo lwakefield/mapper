@@ -10,6 +10,10 @@
     import * as uuid from 'uuid';
 </script>
 
+<svelte:head>
+    <title>DnDandy - virtual tabletop for D&D</title>
+</svelte:head>
+
 <section>
 
     <h1>DnDandy</h1>

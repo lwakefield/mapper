@@ -25,6 +25,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>DnDandy - GM View</title>
+</svelte:head>
+
 <script>
     import * as uuid from 'uuid';
     import { tick } from 'svelte';
