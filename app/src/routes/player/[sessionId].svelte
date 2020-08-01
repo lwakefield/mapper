@@ -81,11 +81,11 @@
 
     async function handleMapWheel (ev) {
         if (ev.ctrlKey) {
-            const target = ev.target.closest('.tabletop');
+            const target = ev.target;
             const left = target.scrollLeft / target.scrollLeftMax;
             const top = target.scrollTop / target.scrollTopMax;
             ev.preventDefault();
-            zoom += event.deltaY * -0.01;
+            zoom += event.deltaY * -0.001;
             await tick();
             target.scrollLeft = left * target.scrollLeftMax;
             target.scrollTop = top * target.scrollTopMax;
@@ -95,7 +95,7 @@
 
 {#if map}
     <div class="row" style="overflow: hidden">
-        <div class="tabletop">
+        <div class="tabletop" on:wheel={handleMapWheel}>
             <Map grid={map.grid} zoom={zoom} on:wheel={handleMapWheel}>
                 <g slot="fogOfWar">
                     <FOW mask={map.mask} fill="#000" />
