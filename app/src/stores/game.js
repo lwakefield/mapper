@@ -1,7 +1,12 @@
 import SocketIO from 'socket.io-client';
 import { writable, get } from 'svelte/store';
 
-export const store = writable({ session: null, maps: {}, messages: [] });
+export const store = writable({
+    session: null,
+    maps: {},
+    pings: {},
+    messages: []
+});
 
 function syncSession (session) {
     store.update(state => Object({ ...state, session }));
@@ -29,6 +34,18 @@ function syncMessage (message) {
         };
     });
 }
+function addPing (ping) {
+    store.update(state => {
+        state.pings[ping.id] = ping;
+        return state;
+    });
+    setTimeout(() => {
+        store.update(state => {
+            delete state.pings[ping.id];
+            return state;
+        });
+    }, 5000);
+}
 
 let socket = null;
 export function init (sessionId) {
@@ -39,6 +56,7 @@ export function init (sessionId) {
     socket.on('update:map',          syncMap);
     socket.on('initialize:messages', initMessages);
     socket.on('update:message',      syncMessage);
+    socket.on('update:mapPing',      addPing);
     socket.connect();
 }
 
@@ -75,6 +93,14 @@ export function insertMap (payload) {
 export function insertMessage (payload) {
     return new Promise((resolve, reject) => {
         socket.emit('insert:message', payload, (res) => {
+            resolve();
+        });
+    })
+}
+
+export function insertMapPing (payload) {
+    return new Promise((resolve, reject) => {
+        socket.emit('insert:mapPing', payload, (res) => {
             resolve();
         });
     })

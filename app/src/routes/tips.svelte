@@ -24,5 +24,7 @@
 
     <p>Roll dice secretly to the GM with "/groll" or "/gr"</p>
 
+    <p>Players can "ping" on the map by double clicking.</p>
+
 </section>
 

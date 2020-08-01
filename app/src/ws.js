@@ -26,6 +26,10 @@ export const ws = async server => {
         await RethinkDB.tableCreate('messages').run(conn);
         await RethinkDB.table('messages').indexCreate('sessionId').run(conn);
     } catch (e) { /* happens if table already exists */ }
+    try {
+        await RethinkDB.tableCreate('mapPings').run(conn);
+        await RethinkDB.table('mapPings').indexCreate('sessionId').run(conn);
+    } catch (e) { /* happens if table already exists */ }
 
     SocketIO(server).of(UUID_RGX).on('connection', handleConnection);
 };
@@ -76,11 +80,17 @@ export const handleConnection = async socket => {
         });
     });
     RethinkDB.table('messages').filter({ sessionId: id }).changes().run(conn, (err, cursor) => {
-            socket.on('disconnect', () => cursor.close());
-            cursor.each((err, row) => {
-                !err && socket.emit('update:message', row.new_val);
-            });
+        socket.on('disconnect', () => cursor.close());
+        cursor.each((err, row) => {
+            !err && socket.emit('update:message', row.new_val);
         });
+    });
+    RethinkDB.table('mapPings').filter({ sessionId: id }).changes().run(conn, (err, cursor) => {
+        socket.on('disconnect', () => cursor.close());
+        cursor.each((err, row) => {
+            !err && socket.emit('update:mapPing', row.new_val);
+        });
+    });
 
     for (const table of ['maps', 'sessions']) {
         const singular = table.replace(/s$/, '');
@@ -107,6 +117,23 @@ export const handleConnection = async socket => {
         RethinkDB.table('maps').insert(data).run(conn, (err, res) => {
             (res.inserted === 1) && console.log(`Inserted map:${data.id} in ${performance.now() - startUpdate}ms`);
             (res.inserted === 0) && console.error(`Did not insert map:${data.id} in ${performance.now() - startUpdate}ms`, err);
+
+            if (callback) {
+                (res.inserted === 0 || err) && callback('error');
+                (res.inserted === 1 && !err) && callback('ok');
+            }
+        });
+    });
+
+    socket.on('insert:mapPing', (data, callback) => {
+        let startUpdate = performance.now();
+        // TODO: DANGER accepting arbitrary id
+        RethinkDB.table('mapPings').insert({
+            sessionId: id,
+            ...data
+        }).run(conn, (err, res) => {
+            (res.inserted === 1) && console.log(`Inserted mapPing:${data.id} in ${performance.now() - startUpdate}ms`);
+            (res.inserted === 0) && console.error(`Did not insert mapPing:${data.id} in ${performance.now() - startUpdate}ms`, err);
 
             if (callback) {
                 (res.inserted === 0 || err) && callback('error');

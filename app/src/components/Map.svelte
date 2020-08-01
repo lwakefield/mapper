@@ -45,6 +45,7 @@
     viewBox={`0 0 ${rows[0].length} ${rows.length}`}
     shape-rendering="crispEdges"
     on:mousedown
+    on:dblclick
     on:drop
     on:dragover
     on:wheel

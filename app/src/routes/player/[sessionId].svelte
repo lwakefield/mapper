@@ -30,11 +30,12 @@
     import Tokens from '../../components/Map/Tokens.svelte';
     import FOW from '../../components/Map/FOW.svelte';
     import Chat from '../../components/Chat.svelte';
+    import Pings from '../../components/Map/Pings.svelte';
     import * as Tools from '../../tools.js';
 
     export let page;
 
-    let session, maps;
+    let session, maps, pings;
     let map;
     let gmTokens = [];
     let playerTokens = [];
@@ -43,7 +44,7 @@
     if (process.browser) {
         Game.init(page.params.sessionId);
         Game.store.subscribe(state => {
-            ({ session, maps } = state);
+            ({ session, maps, pings } = state);
 
             if (session && maps[session.activeMapId]) {
                 map = maps[session.activeMapId];
@@ -91,12 +92,25 @@
             target.scrollTop = top * target.scrollTopMax;
         }
     }
+
+    async function handleDblClick (ev) {
+        const point = Tools.toSVGPoint(ev);
+        await Game.insertMapPing({
+            mapId: session.activeMapId,
+            ...point,
+        });
+    }
 </script>
 
 {#if map}
     <div class="row" style="overflow: hidden">
         <div class="tabletop" on:wheel={handleMapWheel}>
-            <Map grid={map.grid} zoom={zoom} on:wheel={handleMapWheel}>
+            <Map
+                grid={map.grid}
+                zoom={zoom}
+                on:wheel={handleMapWheel}
+                on:dblclick={handleDblClick}
+            >
                 <g slot="fogOfWar">
                     <FOW mask={map.mask} fill="#000" />
                 </g>
@@ -110,6 +124,8 @@
                 {#if draggingToken}
                     <Tokens tokens={[draggingToken]} />
                 {/if}
+
+                <Pings pings={pings} mapId={session.activeMapId} />
             </Map>
         </div>
         <div class="sidebar col">
